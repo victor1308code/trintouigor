@@ -37,16 +37,19 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
 
     window.addEventListener('resize', handleResize);
 
+    // Cores vibrantes no estilo Reggae (Verde, Dourado, Vermelho e Fumaça Creme)
     const smokeColors = [
-      'rgba(245, 239, 225, ', // Creme pergaminho
-      'rgba(217, 119, 6, ',   // Âmbar dourado
-      'rgba(180, 83, 9, ',    // Canela quente
+      'rgba(245, 239, 225, ', // Creme suave
+      'rgba(22, 163, 74, ',   // Verde Rasta
+      'rgba(234, 179, 8, ',   // Dourado solar
+      'rgba(220, 38, 38, ',   // Vermelho quente
     ];
 
     const emberColors = [
-      'rgba(251, 191, 36, ',  // Dourado brilhante
-      'rgba(245, 158, 11, ',  // Âmbar fogo
+      'rgba(250, 204, 21, ',  // Amarelo vibrante
+      'rgba(245, 158, 11, ',  // Âmbar
       'rgba(239, 68, 68, ',   // Vermelho brasa
+      'rgba(34, 197, 94, ',   // Faísca verde
     ];
 
     const createParticle = (type: 'smoke' | 'ember', originX?: number, originY?: number): Particle => {
@@ -62,7 +65,7 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
         vy: isSmoke ? -0.5 - Math.random() * 0.8 : -0.8 - Math.random() * 1.5,
         radius: isSmoke ? 35 + Math.random() * 55 : 1.5 + Math.random() * 2.5,
         alpha: 0,
-        maxAlpha: isSmoke ? 0.07 + Math.random() * 0.08 : 0.4 + Math.random() * 0.4,
+        maxAlpha: isSmoke ? 0.08 + Math.random() * 0.09 : 0.45 + Math.random() * 0.45,
         life: 0,
         maxLife,
         type,
@@ -74,12 +77,12 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
 
     // Partículas iniciais
     if (particlesRef.current.length === 0) {
-      for (let i = 0; i < 28; i++) {
+      for (let i = 0; i < 30; i++) {
         const p = createParticle('smoke', Math.random() * width, Math.random() * height);
         p.life = Math.random() * p.maxLife;
         particlesRef.current.push(p);
       }
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 25; i++) {
         const p = createParticle('ember', Math.random() * width, Math.random() * height);
         p.life = Math.random() * p.maxLife;
         particlesRef.current.push(p);
@@ -91,9 +94,9 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
       const particles = particlesRef.current;
 
       // Adiciona novas partículas
-      if (particles.length < 55) {
-        if (Math.random() < 0.25) particles.push(createParticle('smoke'));
-        if (Math.random() < 0.2) particles.push(createParticle('ember'));
+      if (particles.length < 60) {
+        if (Math.random() < 0.3) particles.push(createParticle('smoke'));
+        if (Math.random() < 0.25) particles.push(createParticle('ember'));
       }
 
       for (let i = particles.length - 1; i >= 0; i--) {
@@ -103,7 +106,7 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
         p.y += p.vy;
 
         if (p.type === 'smoke') {
-          p.radius += 0.2;
+          p.radius += 0.22;
         }
 
         const progress = p.life / p.maxLife;
@@ -127,7 +130,6 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
           ctx.fillStyle = grad;
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         } else {
-          // Brasa incandescente
           ctx.fillStyle = `${p.color}${p.alpha})`;
           ctx.shadowBlur = 8;
           ctx.shadowColor = '#f59e0b';
@@ -148,40 +150,46 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
     };
   }, []);
 
-  // Burst quando alguém clica ou doa
+  // Burst quando alguém clica no botão de fumaça ou doa
   useEffect(() => {
     if (burstTrigger === 0) return;
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight * 0.6;
+    const rastaPuffColors = [
+      'rgba(22, 163, 74, ',
+      'rgba(234, 179, 8, ',
+      'rgba(220, 38, 38, ',
+      'rgba(245, 239, 225, ',
+    ];
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 28; i++) {
       particlesRef.current.push({
-        x: centerX + (Math.random() - 0.5) * 200,
-        y: centerY + (Math.random() - 0.5) * 100,
-        vx: (Math.random() - 0.5) * 2.5,
-        vy: -1.5 - Math.random() * 2,
-        radius: 30 + Math.random() * 40,
+        x: centerX + (Math.random() - 0.5) * 220,
+        y: centerY + (Math.random() - 0.5) * 120,
+        vx: (Math.random() - 0.5) * 3,
+        vy: -1.6 - Math.random() * 2.2,
+        radius: 35 + Math.random() * 45,
         alpha: 0,
-        maxAlpha: 0.35,
+        maxAlpha: 0.38,
         life: 0,
-        maxLife: 100,
+        maxLife: 110,
         type: 'smoke',
-        color: 'rgba(245, 239, 225, ',
+        color: rastaPuffColors[Math.floor(Math.random() * rastaPuffColors.length)],
       });
     }
   }, [burstTrigger]);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {/* Gradiente de fundo rico estilo vinho/burgundy acolhedor */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#3a0f14] via-[#48161d] to-[#2c0b0f]" />
+      {/* Fundo quente em tons de chocolate, vinho e reflexos Reggae */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#2a0e12] via-[#381318] to-[#1f0a0d]" />
       
-      {/* Luz ambiente de vela/lâmpada no topo e cantos */}
-      <div className="absolute -top-32 left-1/4 w-[500px] h-[400px] bg-amber-500/10 blur-[130px] rounded-full animate-flicker" />
-      <div className="absolute -top-20 right-1/4 w-[450px] h-[350px] bg-red-600/10 blur-[120px] rounded-full" />
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[250px] bg-amber-600/5 blur-[100px] rounded-full" />
+      {/* Luzes ambiente Reggae no topo (Verde, Dourado e Vermelho) */}
+      <div className="absolute -top-32 -left-20 w-[500px] h-[400px] bg-[#16a34a]/12 blur-[140px] rounded-full" />
+      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-[#eab308]/15 blur-[150px] rounded-full animate-flicker" />
+      <div className="absolute -top-32 -right-20 w-[500px] h-[400px] bg-[#dc2626]/12 blur-[140px] rounded-full" />
 
-      {/* Canvas com fumaça e brasas vivas */}
+      {/* Canvas com fumaça e brasas tricolores */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
     </div>
   );

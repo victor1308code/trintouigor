@@ -45,7 +45,7 @@ export const VintagePhotoGallery: React.FC = () => {
       id: '1',
       src: '/photos/igor-1.jpg',
       title: 'O Foco da Lenda',
-      caption: 'Analisando quem já mandou o Pix do baile.',
+      caption: 'Analisando quem já fortaleceu a resenha no Pix.',
       rotation: 'rotate-[-2deg]',
       likes: likesMap['1'] || 32,
     },
