@@ -23,6 +23,32 @@ export const VintagePhotoGallery: React.FC = () => {
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
 
+  // Curtidas da maconha (inicia em 0 para todas as fotos)
+  const [likesMap, setLikesMap] = useState<Record<string, number>>(() => {
+    try {
+      const saved = localStorage.getItem('trintou_igor_photo_cannabis_likes_v1');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return {
+      '4': 0,
+      '2': 0,
+      '1': 0,
+      '5': 0,
+      '7': 0,
+      '6': 0,
+    };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('trintou_igor_photo_cannabis_likes_v1', JSON.stringify(likesMap));
+    } catch {
+      // ignore
+    }
+  }, [likesMap]);
+
   // Comentários dos visitantes (inicia totalmente zerado, sem comentários padrões)
   const [comments, setComments] = useState<PhotoComment[]>(() => {
     try {
@@ -77,6 +103,42 @@ export const VintagePhotoGallery: React.FC = () => {
       rotation: 'rotate-[2.5deg]',
     },
   ];
+
+  // Ação de Curtir com a Folha de Maconha (inicia em 0)
+  const handleLike = (photoId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+
+    setLikesMap((prev) => ({
+      ...prev,
+      [photoId]: (prev[photoId] || 0) + 1,
+    }));
+
+    // Dispara confetes comemorativos em formato de folha de maconha
+    try {
+      let leafShape: any = 'circle';
+      if (typeof (confetti as any).shapeFromPath === 'function') {
+        leafShape = (confetti as any).shapeFromPath({
+          path: leafPathD,
+          matrix: [0.1, 0, 0, 0.1, -5, -5],
+        });
+      }
+      confetti({
+        shapes: [leafShape],
+        scalar: 2.7,
+        particleCount: 35,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#16a34a', '#22c55e', '#15803d', '#eab308', '#dc2626'],
+      });
+    } catch {
+      confetti({
+        particleCount: 30,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#16a34a', '#22c55e', '#eab308'],
+      });
+    }
+  };
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,15 +200,16 @@ export const VintagePhotoGallery: React.FC = () => {
           Momentos & Registros do Igor
         </h2>
         <p className="text-xs sm:text-sm font-serif-vintage italic text-[#e6d5c1] mt-1 max-w-md mx-auto">
-          Clique nas fotos polaroid para ver e deixar seu comentário pro aniversariante.
+          Curta com a folhinha e deixe seu comentário pro aniversariante nas fotos polaroid.
         </p>
       </div>
 
-      {/* Grid de Polaroids (Fotos limpas sem legendas + Botão de Comentar) */}
+      {/* Grid de Polaroids (Fotos limpas + Curtir da Maconha + Comentar) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {photos.map((photo) => {
           const photoComments = getCommentsForPhoto(photo.id);
           const latestComment = photoComments[0];
+          const likesCount = likesMap[photo.id] || 0;
 
           return (
             <motion.div
@@ -172,14 +235,18 @@ export const VintagePhotoGallery: React.FC = () => {
                 </div>
               </div>
 
-              {/* Área do Botão Comentar e Comentários dos Amigos */}
+              {/* Área de Ações: Curtir da Maconha + Botão Comentar */}
               <div className="mt-3.5 pt-2.5 border-t border-[#e8ded0] px-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-serif-vintage font-bold text-[#8c6d58]">
-                    {photoComments.length > 0
-                      ? `${photoComments.length} ${photoComments.length === 1 ? 'comentário' : 'comentários'}`
-                      : 'Nenhum comentário'}
-                  </span>
+                  {/* BOTÃO DE CURTIR DA MACONHA (INICIA EM 0) */}
+                  <button
+                    onClick={(e) => handleLike(photo.id, e)}
+                    className="group py-1.5 px-3 rounded-full bg-[#f2e7d5] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-1.5 text-xs font-serif-vintage font-bold text-[#26120c] transition-all shadow-xs active:scale-90 cursor-pointer"
+                    title="Dar uma curtida de maconha nessa foto"
+                  >
+                    <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
+                    <span>{likesCount}</span>
+                  </button>
 
                   {/* BOTÃO COMENTAR */}
                   <button
@@ -191,6 +258,11 @@ export const VintagePhotoGallery: React.FC = () => {
                   >
                     <MessageCircle size={13} className="text-[#eab308]" />
                     <span>Comentar</span>
+                    {photoComments.length > 0 && (
+                      <span className="bg-[#eab308] text-[#26120c] text-[10px] font-black px-1.5 rounded-full">
+                        {photoComments.length}
+                      </span>
+                    )}
                   </button>
                 </div>
 
@@ -209,7 +281,7 @@ export const VintagePhotoGallery: React.FC = () => {
         })}
       </div>
 
-      {/* MODAL LIGHTBOX COM FOTO LIMPA E FORMULÁRIO DE COMENTÁRIO */}
+      {/* MODAL LIGHTBOX COM FOTO LIMPA, CURTIR DA MACONHA E FORMULÁRIO DE COMENTÁRIO */}
       <AnimatePresence>
         {selectedPhoto && (
           <div
@@ -233,7 +305,7 @@ export const VintagePhotoGallery: React.FC = () => {
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto md:overflow-visible">
-                {/* Coluna 1: A Foto Ampliada (Limpa, sem nenhuma legenda) */}
+                {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha */}
                 <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#f5ece0] border-b md:border-b-0 md:border-r border-[#dfceb0]">
                   <div>
                     <div className="rounded-2xl overflow-hidden border-2 border-[#26120c] bg-black aspect-[4/5] max-h-[50vh] md:max-h-none shadow-md">
@@ -245,9 +317,20 @@ export const VintagePhotoGallery: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[#dfceb0] flex items-center justify-center gap-2 text-xs font-serif-vintage text-[#8c6d58]">
-                    <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
-                    <span>Mural do Glorioso • Trintou Igor</span>
+                  <div className="mt-4 pt-3 border-t border-[#dfceb0] flex items-center justify-between gap-2">
+                    {/* Botão Curtir da Maconha no Modal */}
+                    <button
+                      onClick={() => handleLike(selectedPhoto.id)}
+                      className="group py-1.5 px-3.5 rounded-full bg-[#faf5eb] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-2 text-xs font-serif-vintage font-bold text-[#26120c] shadow-xs active:scale-90 transition-all cursor-pointer"
+                    >
+                      <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
+                      <span>Curtir ({likesMap[selectedPhoto.id] || 0})</span>
+                    </button>
+
+                    <div className="flex items-center gap-1.5 text-xs font-serif-vintage text-[#8c6d58]">
+                      <CannabisLeafIcon className="w-3.5 h-3.5 text-[#16a34a]" />
+                      <span>Mural do Glorioso</span>
+                    </div>
                   </div>
                 </div>
 
