@@ -137,20 +137,8 @@ export const ReggaeCalendar: React.FC = () => {
           </span>
         </div>
 
-        {/* Legenda Explicativa */}
-        <div className="my-3 flex items-center justify-between text-[11px] font-serif-vintage text-[#7c5a45] bg-[#f5ede0]/70 p-2 rounded-xl border border-[#e5d8c3]">
-          <div className="flex items-center gap-1.5">
-            <CannabisLeafIcon className="w-3.5 h-3.5 text-[#16a34a]" />
-            <span>= Dias já passados (Fumados)</span>
-          </div>
-          <div className="flex items-center gap-1.5 font-bold text-[#b45309]">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] animate-ping" />
-            <span>24/10 = Festa 30 Anos</span>
-          </div>
-        </div>
-
         {/* GRID DO CALENDÁRIO MENSAL REAL */}
-        <div className="my-2 bg-[#f6eee2] p-3 sm:p-4 rounded-2xl border border-[#e2d5c0] shadow-inner">
+        <div className="my-3 bg-[#f6eee2] p-3 sm:p-4 rounded-2xl border border-[#e2d5c0] shadow-inner">
           {/* Cabeçalho dos Dias da Semana */}
           <div className="grid grid-cols-7 gap-1 sm:gap-1.5 mb-2 text-center">
             {weekDays.map((wd, idx) => (
@@ -272,14 +260,11 @@ export const ReggaeCalendar: React.FC = () => {
           </motion.div>
         )}
 
-        {/* Resumo do Progresso até 24/10 */}
-        <div className="flex items-center justify-between text-xs font-serif-vintage font-bold text-[#593d31] px-1 py-1">
-          <span className="flex items-center gap-1.5 text-[#16a34a]">
+        {/* Dias Fumados */}
+        <div className="flex items-center justify-center text-xs font-serif-vintage font-bold text-[#16a34a] px-1 py-1">
+          <span className="flex items-center gap-1.5 bg-[#e8f5e9] px-3.5 py-1.5 rounded-full border border-[#a5d6a7] shadow-2xs">
             <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
-            <span>7 dias já queimados</span>
-          </span>
-          <span className="text-[#b45309]">
-            Faltam 17 dias pro Trintou!
+            <span>Dias Fumados: {currentDayOfMonth}</span>
           </span>
         </div>
 
