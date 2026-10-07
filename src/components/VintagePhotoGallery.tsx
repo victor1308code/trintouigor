@@ -15,8 +15,6 @@ export interface PhotoComment {
 interface IgorPhoto {
   id: string;
   src: string;
-  title: string;
-  caption: string;
   rotation: string;
 }
 
@@ -25,109 +23,57 @@ export const VintagePhotoGallery: React.FC = () => {
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
 
-  // Comentários persistidos no localStorage
+  // Comentários dos visitantes (inicia totalmente zerado, sem comentários padrões)
   const [comments, setComments] = useState<PhotoComment[]>(() => {
     try {
-      const saved = localStorage.getItem('trintou_igor_photo_comments_v2');
+      localStorage.removeItem('trintou_igor_photo_comments_v2');
+      localStorage.removeItem('trintou_igor_photo_comments_clean_v3');
+      const saved = localStorage.getItem('trintou_igor_photo_comments_empty_v4');
       if (saved) return JSON.parse(saved);
     } catch {
       // ignore
     }
-    return [
-      {
-        id: 'c1',
-        photoId: '4',
-        author: 'Pedrinho',
-        text: 'O homem mais elegante do Núcleo Bandeirante! 30 anos com classe pura!',
-        timestamp: 'Hoje',
-      },
-      {
-        id: 'c2',
-        photoId: '2',
-        author: 'Rafa',
-        text: 'Aquele olhar 4:20 de quem sabe que a resenha vai ser histórica 🔥',
-        timestamp: 'Ontem',
-      },
-      {
-        id: 'c3',
-        photoId: '5',
-        author: 'Bruninho',
-        text: 'Dormiu cedo porque 30 anos não perdoa ninguém kkkk',
-        timestamp: '2 dias atrás',
-      },
-      {
-        id: 'c4',
-        photoId: '1',
-        author: 'Carol',
-        text: 'Focado conferindo quem já fortaleceu a resenha no Pix!',
-        timestamp: 'Hoje',
-      },
-      {
-        id: 'c5',
-        photoId: '7',
-        author: 'Matheus',
-        text: 'Pose clássica de capa de disco de reggae. O Glorioso é eterno!',
-        timestamp: 'Hoje',
-      },
-      {
-        id: 'c6',
-        photoId: '6',
-        author: 'Gabi',
-        text: 'Brisa pura matinal, descansando a mente pros 30 anos!',
-        timestamp: '3 dias atrás',
-      },
-    ];
+    return [];
   });
 
   useEffect(() => {
     try {
-      localStorage.setItem('trintou_igor_photo_comments_v2', JSON.stringify(comments));
+      localStorage.setItem('trintou_igor_photo_comments_empty_v4', JSON.stringify(comments));
     } catch {
       // ignore
     }
   }, [comments]);
 
+  // Lista de Fotos do Igor sem nenhuma legenda
   const photos: IgorPhoto[] = [
     {
       id: '4',
       src: '/photos/igor-4.jpg',
-      title: 'A Beca do Aniversariante',
-      caption: 'Na elegância pura pronto pra comandar a noite.',
       rotation: 'rotate-[-1.5deg]',
     },
     {
       id: '2',
       src: '/photos/igor-2.jpg',
-      title: 'Olhar do Glorioso',
-      caption: 'O piercing e os óculos de quem sabe viver.',
       rotation: 'rotate-[2deg]',
     },
     {
       id: '1',
       src: '/photos/igor-1.jpg',
-      title: 'O Foco da Lenda',
-      caption: 'Analisando quem já fortaleceu a resenha no Pix.',
       rotation: 'rotate-[-2deg]',
     },
     {
       id: '5',
       src: '/photos/igor-5.jpg',
-      title: 'Emotional Exhaustion',
-      caption: 'O guerreiro descansando porque 30 anos pesam!',
       rotation: 'rotate-[1.5deg]',
     },
     {
       id: '7',
       src: '/photos/igor-7.jpg',
-      title: 'A Pose Clássica',
-      caption: 'Quando a resenha tá boa demais pra explicar.',
       rotation: 'rotate-[-1deg]',
     },
     {
       id: '6',
       src: '/photos/igor-6.jpg',
-      title: 'Brisa Matinal',
-      caption: 'Abraçado no travesseiro pensando na vida.',
       rotation: 'rotate-[2.5deg]',
     },
   ];
@@ -149,7 +95,7 @@ export const VintagePhotoGallery: React.FC = () => {
     setNewAuthor('');
     setNewComment('');
 
-    // Dispara confetes comemorativos de maconha
+    // Dispara confetes comemorativos de folha de maconha
     try {
       let leafShape: any = 'circle';
       if (typeof (confetti as any).shapeFromPath === 'function') {
@@ -192,11 +138,11 @@ export const VintagePhotoGallery: React.FC = () => {
           Momentos & Registros do Igor
         </h2>
         <p className="text-xs sm:text-sm font-serif-vintage italic text-[#e6d5c1] mt-1 max-w-md mx-auto">
-          Clique nas fotos polaroid para ver os recados e deixar o seu comentário pro aniversariante!
+          Clique nas fotos polaroid para ver e deixar seu comentário pro aniversariante.
         </p>
       </div>
 
-      {/* Grid Scrapbook de Polaroids com Botão de Comentar */}
+      {/* Grid de Polaroids (Fotos limpas sem legendas + Botão de Comentar) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {photos.map((photo) => {
           const photoComments = getCommentsForPhoto(photo.id);
@@ -210,39 +156,29 @@ export const VintagePhotoGallery: React.FC = () => {
               viewport={{ once: true }}
               whileHover={{ scale: 1.03, rotate: 0 }}
               onClick={() => setSelectedPhoto(photo)}
-              className={`p-3.5 pb-5 rounded-2xl bg-[#faf5eb] border border-[#e5decb] shadow-xl hover:shadow-2xl transition-all cursor-pointer relative flex flex-col justify-between ${photo.rotation}`}
+              className={`p-3 pb-4 rounded-2xl bg-[#faf5eb] border border-[#e5decb] shadow-xl hover:shadow-2xl transition-all cursor-pointer relative flex flex-col justify-between ${photo.rotation}`}
             >
-              {/* Fita crepe colada no topo */}
+              {/* Fita crepe no topo da polaroid */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f0e3cc]/80 border border-[#dfceb0] shadow-xs transform rotate-1 pointer-events-none" />
 
               <div>
-                {/* A Foto com moldura clássica de Polaroid */}
+                {/* A Foto com moldura clássica de Polaroid limpa sem texto */}
                 <div className="aspect-[4/5] overflow-hidden rounded-xl bg-neutral-900 border border-[#e5decb] relative">
                   <img
                     src={photo.src}
-                    alt={photo.title}
+                    alt="Foto do Igor"
                     className="w-full h-full object-cover object-top filter contrast-[1.05] hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-
-                {/* Legenda Estilo Manuscrita */}
-                <div className="mt-3 px-1">
-                  <h4 className="font-serif-vintage font-bold text-sm text-[#26120c] leading-tight">
-                    {photo.title}
-                  </h4>
-                  <p className="font-handwriting text-base text-[#7c5a45] leading-tight mt-0.5">
-                    "{photo.caption}"
-                  </p>
-                </div>
               </div>
 
-              {/* Área do Botão Comentar e Último Recado */}
-              <div className="mt-4 pt-3 border-t border-[#e8ded0] px-1">
+              {/* Área do Botão Comentar e Comentários dos Amigos */}
+              <div className="mt-3.5 pt-2.5 border-t border-[#e8ded0] px-1">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[11px] font-serif-vintage font-bold text-[#8c6d58]">
                     {photoComments.length > 0
                       ? `${photoComments.length} ${photoComments.length === 1 ? 'comentário' : 'comentários'}`
-                      : 'Nenhum comentário ainda'}
+                      : 'Nenhum comentário'}
                   </span>
 
                   {/* BOTÃO COMENTAR */}
@@ -258,7 +194,7 @@ export const VintagePhotoGallery: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Prévia do Último Comentário (se houver) */}
+                {/* Exibição do Último Comentário (se algum visitante comentou) */}
                 {latestComment && (
                   <div className="mt-2 p-2 rounded-xl bg-[#f4ebe0] border border-[#e2d5c3] text-[11px] text-[#5e4130] flex items-start gap-1.5 line-clamp-1">
                     <span className="font-bold text-[#26120c] flex-shrink-0">
@@ -273,7 +209,7 @@ export const VintagePhotoGallery: React.FC = () => {
         })}
       </div>
 
-      {/* MODAL LIGHTBOX COM COMENTÁRIOS E FORMULÁRIO */}
+      {/* MODAL LIGHTBOX COM FOTO LIMPA E FORMULÁRIO DE COMENTÁRIO */}
       <AnimatePresence>
         {selectedPhoto && (
           <div
@@ -290,31 +226,22 @@ export const VintagePhotoGallery: React.FC = () => {
               {/* Botão Fechar */}
               <button
                 onClick={() => setSelectedPhoto(null)}
-                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-[#f2e7d5] hover:bg-[#e6d7be] text-[#26120c] transition-all cursor-pointer"
+                className="absolute top-4 right-4 z-20 p-2 rounded-full bg-[#f2e7d5] hover:bg-[#e6d7be] text-[#26120c] transition-all cursor-pointer shadow-sm"
                 title="Fechar"
               >
                 <X size={18} />
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto md:overflow-visible">
-                {/* Coluna 1: A Foto Ampliada */}
+                {/* Coluna 1: A Foto Ampliada (Limpa, sem nenhuma legenda) */}
                 <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#f5ece0] border-b md:border-b-0 md:border-r border-[#dfceb0]">
                   <div>
                     <div className="rounded-2xl overflow-hidden border-2 border-[#26120c] bg-black aspect-[4/5] max-h-[50vh] md:max-h-none shadow-md">
                       <img
                         src={selectedPhoto.src}
-                        alt={selectedPhoto.title}
+                        alt="Foto do Igor ampliada"
                         className="w-full h-full object-cover object-top"
                       />
-                    </div>
-
-                    <div className="mt-4 text-center">
-                      <h3 className="font-serif-vintage font-bold text-lg sm:text-xl text-[#26120c]">
-                        {selectedPhoto.title}
-                      </h3>
-                      <p className="font-handwriting text-xl text-[#7c5a45] mt-1">
-                        "{selectedPhoto.caption}"
-                      </p>
                     </div>
                   </div>
 
