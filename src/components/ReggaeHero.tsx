@@ -110,6 +110,30 @@ export const ReggaeHero: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Faixa Pop-Art do Igor em Destaque (As 6 faces em Vermelho, Dourado e Verde) */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="mt-8 rounded-2xl overflow-hidden border-2 border-[#f59e0b]/40 shadow-2xl bg-black/40 backdrop-blur-xs relative group"
+      >
+        <img
+          src="/igor-popart-strip.png"
+          alt="Igor Reggae Pop-Art"
+          className="w-full h-16 sm:h-24 md:h-28 object-cover object-center group-hover:scale-[1.02] transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute bottom-1.5 left-3 right-3 flex items-center justify-between text-[10px] sm:text-xs font-serif-vintage uppercase tracking-widest text-[#fde68a] font-bold">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
+            <span className="w-2 h-2 rounded-full bg-[#eab308]" />
+            <span className="w-2 h-2 rounded-full bg-[#dc2626]" />
+            <span>Resistência & Vibrações Positivas</span>
+          </span>
+          <span className="text-[#faf5eb]/90">24 de Outubro • Trintou Igor</span>
+        </div>
+      </motion.div>
     </div>
   );
 };

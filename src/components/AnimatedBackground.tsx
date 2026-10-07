@@ -180,16 +180,34 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
   }, [burstTrigger]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {/* Fundo quente em tons de chocolate, vinho e reflexos Reggae */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#2a0e12] via-[#381318] to-[#1f0a0d]" />
-      
-      {/* Luzes ambiente Reggae no topo (Verde, Dourado e Vermelho) */}
-      <div className="absolute -top-32 -left-20 w-[500px] h-[400px] bg-[#16a34a]/12 blur-[140px] rounded-full" />
-      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-[#eab308]/15 blur-[150px] rounded-full animate-flicker" />
-      <div className="absolute -top-32 -right-20 w-[500px] h-[400px] bg-[#dc2626]/12 blur-[140px] rounded-full" />
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+      {/* 1. Camada de Fundo Pop-Art Reggae com as Fotos do Igor (Desktop e Mobile) */}
+      <picture className="absolute inset-0 w-full h-full">
+        <source media="(max-width: 768px)" srcSet="/igor-popart-mobile.jpg" />
+        <img
+          src="/igor-popart-wallpaper.jpg"
+          alt="Igor Pop-Art Reggae Background"
+          className="w-full h-full object-cover object-center opacity-45 mix-blend-screen scale-105 transition-all duration-700"
+        />
+      </picture>
 
-      {/* Canvas com fumaça e brasas tricolores */}
+      {/* Camada de calor e contraste para destacar os tons Vermelho, Dourado e Verde */}
+      <div 
+        className="absolute inset-0 opacity-40 mix-blend-color-dodge hidden sm:block"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(234, 179, 8, 0.25) 0%, rgba(220, 38, 38, 0.2) 50%, rgba(22, 163, 74, 0.15) 100%)'
+        }}
+      />
+
+      {/* Gradiente escuro elegante para garantir 100% de legibilidade dos textos e cartões */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#140608]/75 via-[#1a080c]/80 to-[#0e0405]/90 pointer-events-none" />
+
+      {/* Luzes ambiente Reggae no topo (Verde, Dourado e Vermelho) */}
+      <div className="absolute -top-32 -left-20 w-[500px] h-[400px] bg-[#16a34a]/20 blur-[140px] rounded-full" />
+      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-[#eab308]/25 blur-[150px] rounded-full animate-flicker" />
+      <div className="absolute -top-32 -right-20 w-[500px] h-[400px] bg-[#dc2626]/20 blur-[140px] rounded-full" />
+
+      {/* Canvas com fumaça e brasas tricolores navegando por cima dos rostos */}
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
     </div>
   );
