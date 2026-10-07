@@ -9,9 +9,9 @@ import { ReggaeLocation } from './components/ReggaeLocation';
 export function App() {
   const [burstCount, setBurstCount] = useState(0);
 
-  // Carrega e salva doações no localStorage
+  // Inicia com 0 contribuições conforme solicitado
   const [donations, setDonations] = useState<Donation[]>(() => {
-    const saved = localStorage.getItem('trintou_igor_donations_reggae');
+    const saved = localStorage.getItem('trintou_igor_donations_reggae_v2');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -19,42 +19,13 @@ export function App() {
         console.error(e);
       }
     }
-    return [
-      {
-        id: '1',
-        name: 'Victor Oliveira',
-        amount: 250,
-        message: 'Fortalecendo o Glorioso nos 30 anos! A lenda merece tudo!',
-        timestamp: 'Ontem',
-      },
-      {
-        id: '2',
-        name: 'Gabriel da Resenha',
-        amount: 170,
-        message: 'Cota da picanha e da fumaça garantida pra resenha.',
-        timestamp: 'Ontem',
-      },
-      {
-        id: '3',
-        name: 'Mariana Silva',
-        amount: 300,
-        message: 'Um brinde ao melhor amigo e aniversariante!',
-        timestamp: 'Hoje cedo',
-      },
-      {
-        id: '4',
-        name: 'Matheus',
-        amount: 400,
-        message: 'A mente vai na lua dia 24/10! Tamo junto demais!',
-        timestamp: 'Hoje',
-      },
-    ];
+    return [];
   });
 
   const totalAmount = donations.reduce((acc, curr) => acc + curr.amount, 0);
 
   useEffect(() => {
-    localStorage.setItem('trintou_igor_donations_reggae', JSON.stringify(donations));
+    localStorage.setItem('trintou_igor_donations_reggae_v2', JSON.stringify(donations));
   }, [donations]);
 
   const handleAddDonation = (newDonation: Omit<Donation, 'id' | 'timestamp'>) => {
