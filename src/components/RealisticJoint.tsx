@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 
 interface RealisticJointProps {
-  burnProgress: number; // 0 (inteiro/apagado) a 100 (totalmente queimado até a piteira)
+  burnProgress: number; // 0 (inteiro/novo) a 100 (totalmente fumado até a piteira)
   isPuffing?: boolean;
 }
 
@@ -10,345 +10,334 @@ export const RealisticJoint: React.FC<RealisticJointProps> = ({
   burnProgress = 0,
   isPuffing = false,
 }) => {
-  // Coordenadas do baseado no viewBox 0 0 840 140
-  // Piteira: x=40 até x=170 (altura 32px a 36px)
-  // Seda: x=170 até x=730 (altura 36px até 50px)
-  // Ponta torcida: x=730 até x=780
+  // Geometria no viewBox 0 0 820 140
+  // Piteira Longa de Papelão: x=40 até x=160 (largura 120px, altura 22px na boca e 26px na emenda)
+  // Corpo do Baseado (Cone de Maconha): x=160 até x=700 (largura 540px, altura abre de 26px até 56px na ponta!)
+  // Ponta torcida (quando novo): x=700 até x=745
 
-  const filterEndX = 170;
-  const paperEndX = 730;
-  const totalPaperLength = paperEndX - filterEndX; // 560px
+  const filterStartX = 40;
+  const filterEndX = 160;
+  const paperFullEndX = 700;
+  const totalPaperLength = paperFullEndX - filterEndX; // 540px
 
-  // Posição X da queima (da direita para a esquerda)
   const isLit = burnProgress > 0 || isPuffing;
-  const currentBurnLength = (Math.min(100, Math.max(0, burnProgress)) / 100) * totalPaperLength;
-  const emberX = paperEndX - currentBurnLength;
+  const progressClamped = Math.min(100, Math.max(0, burnProgress));
+
+  // Quando é gasto, o baseado literalmente ENCURTA (a parte queimada SUMIU, sem barra cinza!)
+  // Posição atual da ponta do baseado:
+  const currentTipX = paperFullEndX - (progressClamped / 100) * totalPaperLength;
+
+  // Altura do cone na posição atual da ponta (de 26px na piteira até 56px no final)
+  const tipRatio = (currentTipX - filterEndX) / totalPaperLength;
+  const tipHalfHeight = (26 + tipRatio * 30) / 2; // de 13 até 28 (altura 26px a 56px)
+  const tipTopY = 70 - tipHalfHeight;
+  const tipBottomY = 70 + tipHalfHeight;
 
   return (
     <div className="w-full relative select-none py-4">
-      {/* Sombra e Efeito de Fumaça Dinâmica subindo da brasa */}
+      {/* Fumaça viva saindo da brasa na ponta */}
       {isLit && (
         <div
-          className="absolute -top-12 transition-all duration-700 ease-out pointer-events-none z-30"
+          className="absolute -top-14 transition-all duration-700 ease-out pointer-events-none z-30"
           style={{
-            left: `${((emberX / 840) * 100).toFixed(1)}%`,
+            left: `${((currentTipX / 820) * 100).toFixed(1)}%`,
             transform: 'translateX(-50%)',
           }}
         >
           <div className="relative flex flex-col items-center">
-            {/* Volutas de Fumaça Realistas */}
+            {/* Volutas de fumaça aromática */}
             <motion.div
-              animate={isPuffing ? { y: [-10, -45], scale: [0.8, 2.4], opacity: [0.7, 0] } : { y: [-5, -35], scale: [0.6, 1.8], opacity: [0.45, 0] }}
-              transition={{ repeat: Infinity, duration: isPuffing ? 1.2 : 2.2, ease: 'easeOut' }}
-              className="w-7 h-7 rounded-full bg-stone-300/40 blur-md -mb-3"
+              animate={isPuffing ? { y: [-10, -50], scale: [0.8, 2.6], opacity: [0.8, 0], x: [0, -8, 8] } : { y: [-5, -38], scale: [0.6, 2], opacity: [0.55, 0], x: [0, 6, -6] }}
+              transition={{ repeat: Infinity, duration: isPuffing ? 1.1 : 2.0, ease: 'easeOut' }}
+              className="w-8 h-8 rounded-full bg-stone-300/40 blur-md -mb-3"
             />
             <motion.div
-              animate={isPuffing ? { y: [0, -35], scale: [1, 2.2], opacity: [0.8, 0], x: [0, 8, -6] } : { y: [0, -25], scale: [0.8, 1.5], opacity: [0.5, 0], x: [0, 4, -4] }}
-              transition={{ repeat: Infinity, duration: isPuffing ? 1.4 : 2.6, delay: 0.4, ease: 'easeOut' }}
-              className="w-5 h-5 rounded-full bg-amber-200/35 blur-sm"
+              animate={isPuffing ? { y: [0, -35], scale: [1, 2.2], opacity: [0.85, 0], x: [0, 10, -10] } : { y: [0, -28], scale: [0.8, 1.6], opacity: [0.6, 0] }}
+              transition={{ repeat: Infinity, duration: isPuffing ? 1.3 : 2.4, delay: 0.35, ease: 'easeOut' }}
+              className="w-6 h-6 rounded-full bg-amber-100/35 blur-sm"
             />
           </div>
         </div>
       )}
 
-      {/* SVG DO BASEADO REALISTA */}
+      {/* SVG DO BASEADO DE MACONHA REALISTA */}
       <svg
-        viewBox="0 0 840 140"
-        className="w-full h-auto drop-shadow-[0_12px_20px_rgba(0,0,0,0.45)] overflow-visible"
-        style={{ maxHeight: '130px' }}
+        viewBox="0 0 820 140"
+        className="w-full h-auto drop-shadow-[0_14px_22px_rgba(0,0,0,0.5)] overflow-visible"
+        style={{ maxHeight: '140px' }}
       >
         <defs>
-          {/* 1. Sombra de Contato Inferior Realista */}
-          <filter id="joint-shadow" x="-5%" y="-20%" width="110%" height="160%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="6" />
-            <feOffset dx="0" dy="14" result="offsetblur" />
-            <feComponentTransfer>
-              <feFuncA type="linear" slope="0.45" />
-            </feComponentTransfer>
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-
-          {/* 2. Brilho Térmico da Brasa */}
-          <filter id="ember-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
+          {/* 1. Sombra Cilíndrica e Brilho Térmico */}
+          <filter id="weed-ember-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
 
-          {/* 3. Gradiente Cilíndrico da Piteira (Papel Kraft Natural / Cardboard) */}
-          <linearGradient id="kraft-cylinder" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#8c582f" />
-            <stop offset="12%" stopColor="#cfa579" />
-            <stop offset="35%" stopColor="#e5c59f" />
-            <stop offset="60%" stopColor="#caa072" />
-            <stop offset="85%" stopColor="#a37144" />
-            <stop offset="100%" stopColor="#673c18" />
+          {/* 2. Piteira Longa de Papelão Kraft Cru (Cardboard Crutch) */}
+          <linearGradient id="crutch-cylinder" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#7a4e23" />
+            <stop offset="15%" stopColor="#b3824f" />
+            <stop offset="35%" stopColor="#d8ab79" />
+            <stop offset="60%" stopColor="#be8f5d" />
+            <stop offset="85%" stopColor="#926233" />
+            <stop offset="100%" stopColor="#5c3411" />
           </linearGradient>
 
-          {/* 4. Gradiente da Seda (Papel translúcido ultrafino unbleached estilo RAW) */}
-          <linearGradient id="paper-cylinder" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#b5aa99" />
-            <stop offset="8%" stopColor="#ded6c8" />
-            <stop offset="25%" stopColor="#fbf9f4" />
-            <stop offset="55%" stopColor="#f2eae0" />
-            <stop offset="78%" stopColor="#ded4c3" />
-            <stop offset="92%" stopColor="#baa993" />
-            <stop offset="100%" stopColor="#8c7a64" />
+          {/* 3. Recheio de Maconha Triturada (Flor verde visível sob a seda fina) */}
+          <linearGradient id="weed-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2c3a16" />
+            <stop offset="20%" stopColor="#4e6528" />
+            <stop offset="50%" stopColor="#638034" />
+            <stop offset="80%" stopColor="#435821" />
+            <stop offset="100%" stopColor="#222e0f" />
           </linearGradient>
 
-          {/* 5. Gradiente da Linha de Goma / Dobra */}
-          <linearGradient id="gum-line" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+          {/* 4. Seda Ultrafina Translúcida de Cânhamo Natural (Estilo RAW Brown) */}
+          <linearGradient id="raw-hemp-paper" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#947c5d" stopOpacity="0.82" />
+            <stop offset="15%" stopColor="#cfbba0" stopOpacity="0.75" />
+            <stop offset="35%" stopColor="#f3e8d6" stopOpacity="0.70" />
+            <stop offset="65%" stopColor="#dfcbaf" stopOpacity="0.75" />
+            <stop offset="88%" stopColor="#af987a" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#735d40" stopOpacity="0.92" />
           </linearGradient>
 
-          {/* 6. Textura Interna de Erva (Nuances através da seda fina) */}
-          <linearGradient id="herb-nuance" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#556b2f" stopOpacity="0.15" />
-            <stop offset="30%" stopColor="#8f9779" stopOpacity="0.1" />
-            <stop offset="60%" stopColor="#6b8e23" stopOpacity="0.18" />
-            <stop offset="100%" stopColor="#4a5d23" stopOpacity="0.22" />
+          {/* 5. Linha de Goma Orgânica da Seda */}
+          <linearGradient id="gum-strip" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.5" />
           </linearGradient>
 
-          {/* 7. Gradiente de Cinza de Queima Realista */}
-          <linearGradient id="ash-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2b2b2b" />
-            <stop offset="15%" stopColor="#696969" />
-            <stop offset="40%" stopColor="#a9a9a9" />
-            <stop offset="70%" stopColor="#545454" />
-            <stop offset="100%" stopColor="#1f1f1f" />
-          </linearGradient>
-
-          {/* 8. Brasa Incandescente */}
-          <radialGradient id="ember-heat" cx="50%" cy="50%" r="50%">
+          {/* 6. Brasa Viva da Ponta (Incandescente) */}
+          <radialGradient id="hot-ember-heat" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="25%" stopColor="#ffea00" />
-            <stop offset="55%" stopColor="#ff3d00" />
-            <stop offset="85%" stopColor="#b71c1c" />
-            <stop offset="100%" stopColor="#3e0707" />
+            <stop offset="20%" stopColor="#fff176" />
+            <stop offset="45%" stopColor="#ff9800" />
+            <stop offset="75%" stopColor="#e53935" />
+            <stop offset="95%" stopColor="#b71c1c" />
+            <stop offset="100%" stopColor="#2b0505" />
           </radialGradient>
 
-          {/* 9. Gradiente da Ponta Torcida (Twisted Tip) */}
-          <linearGradient id="twist-tip" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#ded4c3" />
-            <stop offset="40%" stopColor="#c8bcab" />
-            <stop offset="80%" stopColor="#ab9e8b" />
-            <stop offset="100%" stopColor="#8a7c6a" />
+          {/* 7. Pavio Torcido (Twisted Tip) */}
+          <linearGradient id="weed-twist" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#baa081" />
+            <stop offset="50%" stopColor="#9a7f60" />
+            <stop offset="100%" stopColor="#675034" />
           </linearGradient>
         </defs>
 
         {/* ========================================================
-            CAMADA 1: A PITEIRA (KRAFT NATURAL ROLLED CRUTCH)
-            x=40 a x=170, com formato cônico (32px a 36px de altura)
+            1. PITEIRA LONGA DE PAPELÃO KRAFT (CRUTCH BRASILEIRA)
+            x=40 até x=160
             ======================================================== */}
-        <g id="filter-tip">
+        <g id="piteira-longa">
           {/* Corpo Cilíndrico da Piteira */}
           <polygon
-            points="40,54 170,52 170,88 40,86"
-            fill="url(#kraft-cylinder)"
+            points={`${filterStartX},59 ${filterEndX},57 ${filterEndX},83 ${filterStartX},81`}
+            fill="url(#crutch-cylinder)"
           />
 
-          {/* Textura de papelão: linhas verticais sutis de enrolamento */}
-          <line x1="65" y1="54" x2="65" y2="86" stroke="#5c3818" strokeWidth="0.8" opacity="0.35" />
-          <line x1="95" y1="53" x2="95" y2="87" stroke="#5c3818" strokeWidth="0.8" opacity="0.3" />
-          <line x1="125" y1="53" x2="125" y2="87" stroke="#5c3818" strokeWidth="0.8" opacity="0.3" />
-          <line x1="150" y1="52" x2="150" y2="88" stroke="#5c3818" strokeWidth="0.8" opacity="0.3" />
+          {/* Dobras verticais da piteira enrolada */}
+          <line x1="70" y1="59" x2="70" y2="81" stroke="#4a2a0c" strokeWidth="0.8" opacity="0.4" />
+          <line x1="100" y1="58" x2="100" y2="82" stroke="#4a2a0c" strokeWidth="0.8" opacity="0.35" />
+          <line x1="130" y1="58" x2="130" y2="82" stroke="#4a2a0c" strokeWidth="0.8" opacity="0.35" />
 
-          {/* Abertura da Piteira na boca (elipse com dobra interna em 'S') */}
-          <ellipse cx="40" cy="70" rx="3.5" ry="16" fill="#3a1f0a" />
+          {/* Abertura na boca (espessura cilíndrica com dobra interna em 'S') */}
+          <ellipse cx={filterStartX} cy="70" rx="3" ry="11" fill="#2d1706" />
           <path
-            d="M 39,59 Q 41,65 39,70 Q 37,75 39,81"
+            d={`M ${filterStartX - 1},62 Q ${filterStartX + 2},66 ${filterStartX - 1},70 Q ${filterStartX - 3},74 ${filterStartX - 1},78`}
             fill="none"
-            stroke="#cfa579"
+            stroke="#d8ab79"
             strokeWidth="1.2"
-            opacity="0.85"
+            opacity="0.9"
           />
 
-          {/* Sombra da sobreposição da seda sobre a piteira */}
-          <line x1="169" y1="52" x2="169" y2="88" stroke="#4a2c10" strokeWidth="2" opacity="0.65" />
-          <line x1="171" y1="52" x2="171" y2="88" stroke="#ffffff" strokeWidth="0.8" opacity="0.5" />
+          {/* Emenda da Seda sobre a Piteira */}
+          <line x1={filterEndX - 1} y1="57" x2={filterEndX - 1} y2="83" stroke="#3d2008" strokeWidth="2" opacity="0.75" />
+          <line x1={filterEndX + 1} y1="57" x2={filterEndX + 1} y2="83" stroke="#f5e6d0" strokeWidth="0.8" opacity="0.6" />
         </g>
 
         {/* ========================================================
-            CAMADA 2: O CORPO DA SEDA (CONICAL ROLLED BODY)
-            x=170 a x=730, expande suavemente de 36px para 50px de altura
+            2. O CONE DE MACONHA (RECHEIO VERDE + SEDA RAW BROWN)
+            Ele só existe de x=160 até currentTipX!
+            (Quando queima, a parte gasta SOME COMPLETAMENTE!)
             ======================================================== */}
-        <g id="paper-body">
-          {/* Base da Seda com Iluminação Cilíndrica */}
-          <polygon
-            points="170,52 730,45 730,95 170,88"
-            fill="url(#paper-cylinder)"
-          />
-
-          {/* Nuances de erva triturada translúcidas através da seda */}
-          <polygon
-            points="172,53 728,46 728,94 172,87"
-            fill="url(#herb-nuance)"
-          />
-
-          {/* Pequenas nuances orgânicas naturais de erva sob a seda */}
-          <ellipse cx="230" cy="68" rx="8" ry="4" fill="#556b2f" opacity="0.12" />
-          <ellipse cx="310" cy="72" rx="12" ry="5" fill="#4a5d23" opacity="0.15" />
-          <ellipse cx="390" cy="65" rx="10" ry="4" fill="#6b8e23" opacity="0.14" />
-          <ellipse cx="480" cy="74" rx="14" ry="6" fill="#556b2f" opacity="0.12" />
-          <ellipse cx="560" cy="67" rx="11" ry="5" fill="#4a5d23" opacity="0.16" />
-          <ellipse cx="640" cy="73" rx="15" ry="6" fill="#6b8e23" opacity="0.13" />
-
-          {/* Linha longitudinal da cola (sutil brilho da goma ao longo do topo) */}
-          <path
-            d="M 170,58 L 730,52"
-            stroke="#ffffff"
-            strokeWidth="1.2"
-            opacity="0.4"
-          />
-
-          {/* Marca d'água cruzada sutil de seda nobre (linhas transversais finas) */}
-          <g opacity="0.08" stroke="#333" strokeWidth="0.5">
-            <line x1="220" y1="52" x2="250" y2="88" />
-            <line x1="280" y1="51" x2="310" y2="89" />
-            <line x1="340" y1="50" x2="370" y2="90" />
-            <line x1="400" y1="49" x2="430" y2="91" />
-            <line x1="460" y1="48" x2="490" y2="92" />
-            <line x1="520" y1="47" x2="550" y2="93" />
-            <line x1="580" y1="46" x2="610" y2="94" />
-            <line x1="640" y1="46" x2="670" y2="94" />
-          </g>
-
-          {/* Brilho especular de luz na parte superior do cone */}
-          <polygon
-            points="170,55 730,48 730,60 170,62"
-            fill="#ffffff"
-            opacity="0.18"
-          />
-
-          {/* Sombra de oclusão na parte inferior do cone */}
-          <polygon
-            points="170,83 730,89 730,95 170,88"
-            fill="#3a2f20"
-            opacity="0.25"
-          />
-        </g>
-
-        {/* ========================================================
-            CAMADA 3: PONTA TORCIDA (TWISTED TIP) - QUANDO APAGADO
-            Quando burnProgress === 0 e não está puxando fumaça
-            ======================================================== */}
-        {!isLit && (
-          <g id="twisted-tip">
-            {/* Cone de fechamento torcido clássico */}
-            <path
-              d="M 730,45 Q 755,56 775,67 Q 755,79 730,95 Q 735,70 730,45 Z"
-              fill="url(#twist-tip)"
+        {currentTipX > filterEndX && (
+          <g id="cone-maconha">
+            {/* 2.1 Recheio Interno de Erva Verde Triturada (Visível sob a seda translúcida) */}
+            <polygon
+              points={`${filterEndX},57 ${currentTipX},${tipTopY} ${currentTipX},${tipBottomY} ${filterEndX},83`}
+              fill="url(#weed-fill)"
             />
-            {/* Linhas de torção do papel na ponta */}
+
+            {/* Pedaços de flor triturada orgânica / pistilos dourados no recheio */}
+            <g opacity="0.45">
+              {/* Pontinhos e nuances de erva */}
+              <circle cx="200" cy="68" r="4.5" fill="#38491f" />
+              <circle cx="215" cy="73" r="3" fill="#859942" />
+              <circle cx="250" cy="65" r="5" fill="#2c3a16" />
+              <circle cx="280" cy="74" r="6" fill="#4d632b" />
+              <ellipse cx="320" cy="67" rx="7" ry="4" fill="#6d8a39" />
+              <circle cx="360" cy="76" r="6.5" fill="#38491f" />
+              <circle cx="410" cy="64" r="7" fill="#5b7430" />
+              <circle cx="460" cy="75" r="8" fill="#425520" />
+              <ellipse cx="510" cy="66" rx="9" ry="5" fill="#6e8e3d" />
+              <circle cx="570" cy="77" r="9" fill="#38491f" />
+              <circle cx="630" cy="65" r="10" fill="#4e6528" />
+              <circle cx="680" cy="76" r="11" fill="#5e7a32" />
+              {/* Toques de pistilos âmbar/dourados de flor curada */}
+              <circle cx="230" cy="71" r="2" fill="#c97f26" />
+              <circle cx="340" cy="69" r="2.5" fill="#b8731f" />
+              <circle cx="440" cy="72" r="3" fill="#d98c2b" />
+              <circle cx="540" cy="68" r="3.5" fill="#c97f26" />
+              <circle cx="650" cy="74" r="4" fill="#b8731f" />
+            </g>
+
+            {/* 2.2 Seda Unbleached de Cânhamo por cima (Translúcida com Iluminação Cilíndrica) */}
+            <polygon
+              points={`${filterEndX},57 ${currentTipX},${tipTopY} ${currentTipX},${tipBottomY} ${filterEndX},83`}
+              fill="url(#raw-hemp-paper)"
+            />
+
+            {/* Linha da cola da seda (ao longo da borda superior) */}
             <path
-              d="M 732,48 Q 750,62 770,68"
-              fill="none"
-              stroke="#8a7c6a"
+              d={`M ${filterEndX},63 L ${currentTipX},${tipTopY + 7}`}
+              stroke="#ffffff"
               strokeWidth="1.2"
-              opacity="0.6"
+              opacity="0.35"
             />
-            <path
-              d="M 732,92 Q 750,75 772,69"
-              fill="none"
-              stroke="#8a7c6a"
-              strokeWidth="1.2"
-              opacity="0.6"
+
+            {/* Marca d'água cruzada sutil de seda de qualidade (criss-cross) */}
+            <g opacity="0.06" stroke="#222" strokeWidth="0.6">
+              <line x1="200" y1="57" x2="230" y2="83" />
+              <line x1="260" y1="56" x2="290" y2="84" />
+              <line x1="320" y1="55" x2="350" y2="85" />
+              <line x1="380" y1="54" x2="410" y2="86" />
+              <line x1="440" y1="53" x2="470" y2="87" />
+              <line x1="500" y1="52" x2="530" y2="88" />
+              <line x1="560" y1="51" x2="590" y2="89" />
+              <line x1="620" y1="50" x2="650" y2="90" />
+            </g>
+
+            {/* Brilho de volume superior */}
+            <polygon
+              points={`${filterEndX},60 ${currentTipX},${tipTopY + 3} ${currentTipX},${tipTopY + 12} ${filterEndX},67`}
+              fill="#ffffff"
+              opacity="0.14"
             />
-            <path
-              d="M 740,55 Q 758,68 775,68"
-              fill="none"
-              stroke="#594d3f"
-              strokeWidth="0.8"
-              opacity="0.7"
+
+            {/* Sombra de volume inferior */}
+            <polygon
+              points={`${filterEndX},79 ${currentTipX},${tipBottomY - 10} ${currentTipX},${tipBottomY} ${filterEndX},83`}
+              fill="#2b1a0a"
+              opacity="0.28"
             />
-            {/* Pontinha amassada torcida */}
-            <circle cx="775" cy="68" r="3.5" fill="#675846" />
           </g>
         )}
 
         {/* ========================================================
-            CAMADA 4: QUEIMA REALISTA (CINZA, CARVÃO & BRASA VIVA)
-            Quando burnProgress > 0 ou isPuffing === true
+            3. PONTA TORCIDA CLÁSSICA (QUANDO NOVO / APAGADO)
+            Aparece apenas quando burnProgress === 0 e não está puxando
             ======================================================== */}
-        {isLit && (
-          <g id="burning-section">
-            {/* 1. Cinza de Queima (Área já consumida à direita da brasa) */}
-            {emberX < paperEndX && (
-              <g id="ash-body">
-                {/* Geometria da cinza cilíndrica */}
-                <polygon
-                  points={`${emberX},${45 + ((730 - emberX) / 560) * 0} 730,45 730,95 ${emberX},${95 - ((730 - emberX) / 560) * 0}`}
-                  fill="url(#ash-gradient)"
-                />
-                
-                {/* Textura irregular de cinza esfarelada / estalos de carvão */}
-                <g opacity="0.6" stroke="#222" strokeWidth="0.7">
-                  <path d={`M ${emberX + 15},52 Q ${emberX + 25},60 ${emberX + 20},72`} fill="none" />
-                  <path d={`M ${emberX + 35},68 Q ${emberX + 45},78 ${emberX + 38},88`} fill="none" />
-                  <path d={`M ${emberX + 60},56 Q ${emberX + 70},65 ${emberX + 65},80`} fill="none" />
-                </g>
-
-                {/* Manchas de cinza branca e flocos de queima */}
-                <ellipse cx={emberX + 20} cy="66" rx="6" ry="3" fill="#e0e0e0" opacity="0.65" />
-                <ellipse cx={emberX + 45} cy="74" rx="8" ry="4" fill="#cccccc" opacity="0.6" />
-                <ellipse cx={emberX + 70} cy="62" rx="7" ry="3.5" fill="#f5f5f5" opacity="0.5" />
-              </g>
-            )}
-
-            {/* 2. Anel de Queima Escuro (Charcoal Line na borda do papel) */}
+        {!isLit && (
+          <g id="pavio-torcido-maconha">
+            {/* O fechamento em torção de baseado */}
             <path
-              d={`M ${emberX - 3},${45 + ((730 - emberX) / 560) * 7} Q ${emberX - 6},70 ${emberX - 3},${95 - ((730 - emberX) / 560) * 7}`}
+              d="M 700,42 Q 725,55 745,67 Q 725,82 700,98 Q 706,70 700,42 Z"
+              fill="url(#weed-twist)"
+            />
+            {/* Vincos e torções do papel na ponta */}
+            <path
+              d="M 702,46 Q 722,60 742,67"
               fill="none"
-              stroke="#141414"
+              stroke="#543e26"
+              strokeWidth="1.3"
+              opacity="0.75"
+            />
+            <path
+              d="M 702,94 Q 722,78 742,69"
+              fill="none"
+              stroke="#543e26"
+              strokeWidth="1.3"
+              opacity="0.75"
+            />
+            <path
+              d="M 710,54 Q 728,68 745,68"
+              fill="none"
+              stroke="#382613"
+              strokeWidth="1"
+              opacity="0.8"
+            />
+            {/* Ponta amassadinha de fechar */}
+            <circle cx="745" cy="67" r="3.5" fill="#4d351b" />
+          </g>
+        )}
+
+        {/* ========================================================
+            4. BRASA VIVA NA PONTA DA QUEIMA (SEM BARRA CINZA ATRÁS!)
+            A parte queimada já sumiu! Aqui fica apenas a brasa viva!
+            ======================================================== */}
+        {isLit && currentTipX > filterEndX && (
+          <g id="brasa-viva">
+            {/* Anel de queima carvão irregular na borda da seda */}
+            <path
+              d={`M ${currentTipX - 2},${tipTopY + 1} Q ${currentTipX - 4},70 ${currentTipX - 2},${tipBottomY - 1}`}
+              fill="none"
+              stroke="#17110c"
               strokeWidth="5"
               strokeLinecap="round"
             />
             <path
-              d={`M ${emberX - 1},${46 + ((730 - emberX) / 560) * 7} Q ${emberX - 4},70 ${emberX - 1},${94 - ((730 - emberX) / 560) * 7}`}
+              d={`M ${currentTipX - 1},${tipTopY + 2} Q ${currentTipX - 3},70 ${currentTipX - 1},${tipBottomY - 2}`}
               fill="none"
-              stroke="#681500"
+              stroke="#541203"
               strokeWidth="3.5"
               strokeLinecap="round"
             />
 
-            {/* 3. A Brasa Incandescente (Glowing Hot Ember) */}
-            <g filter="url(#ember-glow)">
-              {/* Auréola de calor alaranjada */}
+            {/* A Brasa Incandescente com Brilho Térmico */}
+            <g filter="url(#weed-ember-glow)">
+              {/* Auréola de fogo vermelho/laranja */}
               <ellipse
-                cx={emberX}
+                cx={currentTipX}
                 cy="70"
-                rx={isPuffing ? 8 : 5.5}
-                ry={20}
-                fill="url(#ember-heat)"
-                opacity={isPuffing ? 1 : 0.92}
+                rx={isPuffing ? 8.5 : 6}
+                ry={tipHalfHeight + (isPuffing ? 3 : 1)}
+                fill="url(#hot-ember-heat)"
+                opacity={isPuffing ? 1 : 0.95}
               />
 
-              {/* Núcleo Incandescente Amarelo/Branco pulsante */}
+              {/* Núcleo Incandescente Amarelo e Branco Quente */}
               <ellipse
-                cx={emberX + 1}
+                cx={currentTipX + 1}
                 cy="70"
-                rx={isPuffing ? 4.5 : 2.8}
-                ry={13}
+                rx={isPuffing ? 4.5 : 3}
+                ry={tipHalfHeight * 0.65}
                 fill="#ffffff"
-                opacity="0.9"
+                opacity="0.95"
               />
             </g>
 
-            {/* Micro faíscas incandescentes saindo da brasa */}
+            {/* Faíscas sutis voando da brasa quando puxa */}
             {isPuffing && (
-              <g fill="#ffeb3b">
-                <circle cx={emberX - 6} cy="62" r="1.2" opacity="0.9" />
-                <circle cx={emberX - 9} cy="75" r="1" opacity="0.8" />
-                <circle cx={emberX - 5} cy="82" r="1.3" opacity="0.85" />
-                <circle cx={emberX - 12} cy="68" r="0.8" opacity="0.75" />
+              <g fill="#ffea00">
+                <circle cx={currentTipX + 8} cy="60" r="1.5" opacity="0.9" />
+                <circle cx={currentTipX + 14} cy="76" r="1.2" opacity="0.8" />
+                <circle cx={currentTipX + 10} cy="84" r="1.4" opacity="0.85" />
+                <circle cx={currentTipX + 18} cy="66" r="1.0" opacity="0.75" />
               </g>
             )}
+          </g>
+        )}
+
+        {/* Quando totalmente fumado até a piteira (100%) */}
+        {currentTipX <= filterEndX && (
+          <g id="ponta-final">
+            <ellipse cx={filterEndX} cy="70" rx="4" ry="13" fill="#1c1917" />
+            <circle cx={filterEndX} cy="70" r="3" fill="#ff5722" />
           </g>
         )}
       </svg>
