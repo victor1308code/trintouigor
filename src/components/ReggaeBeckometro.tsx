@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Copy, Check, PlusCircle, Flame, Sparkles, Wind } from 'lucide-react';
+import { Copy, Check, PlusCircle, Flame, Wind } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CannabisLeafIcon } from './CannabisLeafIcon';
+import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 import { RealisticJoint } from './RealisticJoint';
 
 export interface Donation {
@@ -46,16 +46,85 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
     setTimeout(() => setCopied(false), 2500);
   };
 
+  // Disparo comemorativo de confetes com formato vetorial da FOLHA DE MACONHA
+  const triggerCannabisConfetti = (isSuperBlast = false) => {
+    try {
+      let leafShape: any = 'circle';
+      if (typeof (confetti as any).shapeFromPath === 'function') {
+        leafShape = (confetti as any).shapeFromPath({
+          path: leafPathD,
+          matrix: [0.1, 0, 0, 0.1, -5, -5],
+        });
+      }
+
+      const weedRastaColors = [
+        '#16a34a', // Verde clássico
+        '#22c55e', // Verde vibrante
+        '#15803d', // Verde floresta
+        '#4ade80', // Verde broto fresco
+        '#84cc16', // Verde lima aromático
+        '#eab308', // Ouro canábico
+        '#ca8a04', // Âmbar resinoso
+        '#dc2626', // Vermelho rasta
+      ];
+
+      // Chuva Central de Folhas de Maconha (escala aumentada para nitidez do formato)
+      confetti({
+        shapes: [leafShape],
+        scalar: isSuperBlast ? 3.3 : 2.8,
+        particleCount: isSuperBlast ? 90 : 65,
+        spread: 90,
+        origin: { y: 0.65 },
+        colors: weedRastaColors,
+        gravity: 0.75,
+        decay: 0.93,
+        ticks: 320,
+      });
+
+      // Tiros Laterais em leque para preencher a tela inteira com as folhinhas
+      setTimeout(() => {
+        confetti({
+          shapes: [leafShape],
+          scalar: isSuperBlast ? 2.9 : 2.4,
+          particleCount: isSuperBlast ? 55 : 40,
+          angle: 55,
+          spread: 70,
+          origin: { x: 0.15, y: 0.72 },
+          colors: weedRastaColors,
+          gravity: 0.72,
+          decay: 0.93,
+          ticks: 300,
+        });
+
+        confetti({
+          shapes: [leafShape],
+          scalar: isSuperBlast ? 2.9 : 2.4,
+          particleCount: isSuperBlast ? 55 : 40,
+          angle: 125,
+          spread: 70,
+          origin: { x: 0.85, y: 0.72 },
+          colors: weedRastaColors,
+          gravity: 0.72,
+          decay: 0.93,
+          ticks: 300,
+        });
+      }, 140);
+    } catch (e) {
+      console.warn('Erro ao disparar confetes da folha:', e);
+      confetti({
+        particleCount: 75,
+        spread: 80,
+        origin: { y: 0.65 },
+        colors: ['#16a34a', '#22c55e', '#eab308', '#dc2626'],
+      });
+    }
+  };
+
   const handlePuffClick = () => {
     setIsPuffing(true);
     onPuff();
-    confetti({
-      particleCount: 45,
-      spread: 60,
-      origin: { y: 0.7 },
-      colors: ['#16a34a', '#eab308', '#dc2626'],
-    });
-    setTimeout(() => setIsPuffing(false), 1600);
+    triggerCannabisConfetti(false);
+    setTimeout(() => setIsPuffing(false), 2700);
   };
 
   const handleConfirmDonation = (e: React.FormEvent) => {
@@ -70,12 +139,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
       message: donorMessage.trim() || 'Parabéns Igor, tamo junto nos 30 anos!',
     });
 
-    confetti({
-      particleCount: 120,
-      spread: 90,
-      origin: { y: 0.6 },
-      colors: ['#16a34a', '#eab308', '#dc2626', '#faf5eb'],
-    });
+    triggerCannabisConfetti(true);
 
     setDonorName('');
     setDonorMessage('');
@@ -123,15 +187,30 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
           <RealisticJoint burnProgress={burnPercentage} isPuffing={isPuffing} />
         </div>
 
-        {/* Botão Interativo: Puxar Fumaça */}
+        {/* Botão Interativo: Puxar Fumaça (com feedback animado e confetes de folha) */}
         <div className="flex justify-center mb-6">
           <button
             onClick={handlePuffClick}
-            className="px-5 py-2.5 rounded-full bg-[#f2e7d5] hover:bg-[#ebdcc5] text-[#26120c] font-serif-vintage font-bold text-xs uppercase tracking-wider border border-[#ded0b9] shadow-md flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+            disabled={isPuffing}
+            className={`px-6 py-3 rounded-full font-serif-vintage font-bold text-xs uppercase tracking-wider border shadow-lg flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer ${
+              isPuffing
+                ? 'bg-[#16a34a] text-white border-[#15803d] shadow-green-900/40 animate-pulse'
+                : 'bg-[#f2e7d5] hover:bg-[#ebdcc5] text-[#26120c] border-[#ded0b9] shadow-md'
+            }`}
           >
-            <Wind size={15} className="text-[#16a34a]" />
-            <span>Puxar uma Fumaça Comemorativa</span>
-            <Sparkles size={14} className="text-[#eab308]" />
+            {isPuffing ? (
+              <>
+                <Wind size={16} className="text-white animate-spin" />
+                <span className="font-extrabold tracking-wider">Soltando Muita Fumaça... 💨</span>
+                <CannabisLeafIcon className="w-4 h-4 text-white" />
+              </>
+            ) : (
+              <>
+                <Wind size={16} className="text-[#16a34a]" />
+                <span>Puxar uma Fumaça Comemorativa</span>
+                <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
+              </>
+            )}
           </button>
         </div>
 

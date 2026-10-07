@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Clock, Check, Calendar as CalendarIcon, Flame } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CannabisLeafIcon } from './CannabisLeafIcon';
+import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 
 export const ReggaeCalendar: React.FC = () => {
   const targetDate = new Date('2026-10-24T20:00:00').getTime();
@@ -39,12 +39,30 @@ export const ReggaeCalendar: React.FC = () => {
     e.preventDefault();
     if (!rsvpName.trim()) return;
     setRsvpDone(true);
-    confetti({
-      particleCount: 80,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#16a34a', '#eab308', '#dc2626', '#faf5eb'],
-    });
+    try {
+      let leafShape: any = 'circle';
+      if (typeof (confetti as any).shapeFromPath === 'function') {
+        leafShape = (confetti as any).shapeFromPath({
+          path: leafPathD,
+          matrix: [0.1, 0, 0, 0.1, -5, -5],
+        });
+      }
+      confetti({
+        shapes: [leafShape],
+        scalar: 2.8,
+        particleCount: 80,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#16a34a', '#22c55e', '#eab308', '#dc2626'],
+      });
+    } catch {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#16a34a', '#eab308', '#dc2626', '#faf5eb'],
+      });
+    }
   };
 
   // Dias da semana (Início no Domingo)
