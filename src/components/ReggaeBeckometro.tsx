@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Copy, Check, PlusCircle, Flame, Sparkles, Wind } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon } from './CannabisLeafIcon';
+import { RealisticJoint } from './RealisticJoint';
 
 export interface Donation {
   id: string;
@@ -98,19 +99,12 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
           <div className="flex-1 bg-[#dc2626]" />
         </div>
 
-        {/* Header do Beckômetro */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#e5decb] mt-1">
+        {/* Header do Beckômetro (Sem símbolo no início e sem frase) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#e5decb] mt-1">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16a34a]/15 text-[#16a34a] text-xs font-serif-vintage font-bold mb-1">
-              <Flame size={14} className="text-[#dc2626] animate-bounce" />
-              <span>VAQUINHA DO GLORIOSO</span>
-            </div>
             <h3 className="font-serif-vintage font-black text-2xl sm:text-3xl tracking-tight text-[#26120c] uppercase">
               O BECKÔMETRO DO IGOR
             </h3>
-            <p className="text-xs sm:text-sm font-serif-vintage italic text-[#7c5a45] mt-0.5">
-              Fortaleça a resenha pelo Pix com qualquer valor
-            </p>
           </div>
 
           {/* Placar de Total Fortalecido */}
@@ -124,83 +118,9 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
           </div>
         </div>
 
-        {/* ESTRUTURA VISUAL DO BASEADO REGGAE (QUEIMA INVERSA) */}
-        <div className="my-7 relative py-4 px-1">
-          {/* Fumaça animada subindo da posição da brasa */}
-          {burnPercentage > 0 && (
-            <div
-              className="absolute -top-10 transition-all duration-700 ease-out pointer-events-none flex flex-col items-center z-30"
-              style={{ left: `calc(${burnPercentage}% + 15px)` }}
-            >
-              <div className="w-5 h-5 rounded-full bg-neutral-400/40 blur-sm animate-smoke-curl" />
-              <div className="w-6 h-6 rounded-full bg-amber-400/30 blur-md animate-smoke-curl -mt-2" style={{ animationDelay: '0.6s' }} />
-              <div className="w-7 h-7 rounded-full bg-neutral-300/25 blur-md animate-smoke-curl -mt-3" style={{ animationDelay: '1.2s' }} />
-            </div>
-          )}
-
-          {/* O BASEADO HORIZONTAL */}
-          <div className="relative flex items-center h-16 sm:h-20 rounded-2xl bg-[#26120c] border-3 border-[#3d1d14] p-1.5 shadow-2xl overflow-visible">
-            
-            {/* 1. Piteira Reggae Tricolor (Verde, Amarela e Vermelha) */}
-            <div className="w-20 sm:w-28 h-full rounded-l-xl flex items-center justify-center relative shadow-lg z-20 border-r-3 border-[#26120c] flex-shrink-0 overflow-hidden">
-              <div className="absolute inset-0 flex">
-                <div className="w-1/3 h-full bg-[#16a34a]" />
-                <div className="w-1/3 h-full bg-[#eab308]" />
-                <div className="w-1/3 h-full bg-[#dc2626]" />
-              </div>
-              <div className="relative z-10 bg-black/80 px-2 py-1 rounded-md text-[10px] font-black font-serif-vintage text-white shadow-md border border-white/40 flex items-center gap-1">
-                <CannabisLeafIcon className="w-3 h-3 text-[#16a34a]" />
-                <span>IGOR 30</span>
-              </div>
-            </div>
-
-            {/* 2. Seda & Queima Inversa Dinâmica */}
-            <div className="relative flex-1 h-full rounded-r-xl overflow-hidden bg-gradient-to-r from-[#fdfaf5] via-[#f7f0e4] to-[#ede3d1] flex items-center">
-              
-              {/* Marcas d'água sutis na seda */}
-              <div className="absolute inset-0 opacity-20 flex items-center justify-around pointer-events-none select-none text-xs">
-                <span>🌿</span>
-                <span>🦁</span>
-                <span>🌿</span>
-                <span>🦁</span>
-                <span>🌿</span>
-              </div>
-
-              {/* Área queimada (cinza & brasa) que avança conforme as contribuições entram */}
-              {burnPercentage > 0 && (
-                <motion.div
-                  initial={false}
-                  animate={{ width: `${burnPercentage}%` }}
-                  transition={{ type: 'spring', stiffness: 50, damping: 15 }}
-                  className="h-full flex items-center justify-end relative"
-                  style={{
-                    background: 'linear-gradient(to right, #1c1917 0%, #292524 50%, #78350f 80%, #b45309 92%, #ea580c 100%)'
-                  }}
-                >
-                  {/* Textura de cinza */}
-                  <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#78716c_1px,transparent_1px)] [background-size:6px_6px]" />
-
-                  {/* A BRASA VIVA INCANDESCENTE */}
-                  <motion.div
-                    animate={isPuffing ? { scale: [1, 1.45, 1.1] } : { scale: [1, 1.15, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                    className="relative z-30 flex items-center justify-center -mr-3"
-                  >
-                    <div className="w-7 sm:w-8 h-12 sm:h-14 rounded-full bg-gradient-to-r from-orange-600 via-red-500 to-amber-300 shadow-[0_0_20px_#f97316,0_0_35px_#dc2626] flex items-center justify-center">
-                      <div className="w-2 h-5 bg-white rounded-full blur-[1px] animate-pulse" />
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )}
-
-              {/* Seda que ainda falta queimar */}
-              <div className="flex-1 h-full relative flex items-center justify-center">
-                <span className="text-[11px] sm:text-xs font-serif-vintage tracking-widest uppercase font-bold text-[#7c5a45]/80 select-none px-3 text-center">
-                  {burnPercentage === 0 ? 'Seda Pronta • Mande um Pix para acender a brasa!' : 'Queimando a Fumaça da Resenha!'}
-                </span>
-              </div>
-            </div>
-          </div>
+        {/* O BASEADO HIPER-REALISTA */}
+        <div className="my-5 relative px-1">
+          <RealisticJoint burnProgress={burnPercentage} isPuffing={isPuffing} />
         </div>
 
         {/* Botão Interativo: Puxar Fumaça */}
