@@ -268,6 +268,16 @@ export const VintagePhotoGallery: React.FC = () => {
     }
   };
 
+  // Fotos ordenadas da mais curtida para a menos curtida (baseado no número de maconhas / curtidas)
+  const sortedPhotos = [...photos].sort((a, b) => {
+    const likesA = likesMap[a.id] || 0;
+    const likesB = likesMap[b.id] || 0;
+    if (likesB !== likesA) {
+      return likesB - likesA;
+    }
+    return photos.indexOf(a) - photos.indexOf(b);
+  });
+
   const getCommentsForPhoto = (photoId: string) => {
     return comments.filter((c) => c.photoId === photoId);
   };
@@ -289,23 +299,36 @@ export const VintagePhotoGallery: React.FC = () => {
         </p>
       </div>
 
-      {/* Grid de Polaroids (Fotos limpas + Curtir da Maconha + Comentar) */}
+      {/* Grid de Polaroids (Fotos ordenadas da mais curtida para a menos curtida) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {photos.map((photo) => {
+        {sortedPhotos.map((photo, index) => {
           const photoComments = getCommentsForPhoto(photo.id);
           const latestComment = photoComments[0];
           const likesCount = likesMap[photo.id] || 0;
+          const isTop1 = index === 0 && likesCount > 0;
 
           return (
             <motion.div
+              layout
               key={photo.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               whileHover={{ scale: 1.03, rotate: 0 }}
+              transition={{
+                layout: { duration: 0.45, ease: 'easeInOut' },
+              }}
               onClick={() => setSelectedPhoto(photo)}
               className={`p-3 pb-4 rounded-2xl bg-[#faf5eb] border border-[#e5decb] shadow-xl hover:shadow-2xl transition-all cursor-pointer relative flex flex-col justify-between ${photo.rotation}`}
             >
+              {/* Selo #1 Mais Chapada quando houver curtidas */}
+              {isTop1 && (
+                <div className="absolute top-4 right-4 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
+                  <CannabisLeafIcon className="w-3 h-3 text-[#fde047]" />
+                  <span>#1 Mais Chapada</span>
+                </div>
+              )}
+
               {/* Fita crepe no topo da polaroid */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f0e3cc]/80 border border-[#dfceb0] shadow-xs transform rotate-1 pointer-events-none" />
 
