@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Copy, Check, PlusCircle, Heart, Flame, Sparkles, Wind } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { CannabisLeafIcon } from './CannabisLeafIcon';
 
 export interface Donation {
   id: string;
@@ -13,7 +14,7 @@ export interface Donation {
 
 interface ReggaeBeckometroProps {
   totalAmount: number;
-  targetAmount: number;
+  targetAmount?: number;
   donations: Donation[];
   onAddDonation: (donation: Omit<Donation, 'id' | 'timestamp'>) => void;
   onPuff: () => void;
@@ -21,7 +22,6 @@ interface ReggaeBeckometroProps {
 
 export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
   totalAmount,
-  targetAmount,
   donations,
   onAddDonation,
   onPuff,
@@ -34,8 +34,31 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [isPuffing, setIsPuffing] = useState(false);
 
-  const percentage = Math.min(100, Math.max(0, Math.round((totalAmount / targetAmount) * 100)));
   const pixKey = '30.igor.glorioso@pix';
+
+  // MARCOS DA RESENHA (SEM META FIXA, COM EVOLUÇÃO DE VIBE)
+  const milestones = [
+    { threshold: 300, label: 'Esquenta & Piteiras', desc: 'A brasa acendeu! Salve geral!', icon: '🌿' },
+    { threshold: 700, label: 'Litrão & Gelo', desc: 'Primeiras rodadas garantidas!', icon: '🍺' },
+    { threshold: 1200, label: 'Churrasco no Ponto', desc: 'Picanha na brasa e resenha firme!', icon: '🥩' },
+    { threshold: 2000, label: 'Mente na Lua & Fumaça', desc: 'Som alto e energia máxima!', icon: '🚀' },
+    { threshold: 3000, label: 'Glorioso Lendário', desc: 'Igor 30 Anos marcado na história!', icon: '👑' },
+  ];
+
+  // Encontra o marco atual e o próximo marco a conquistar
+  const nextMilestoneIndex = milestones.findIndex((m) => totalAmount < m.threshold);
+  const currentMilestone = nextMilestoneIndex === -1
+    ? milestones[milestones.length - 1]
+    : nextMilestoneIndex === 0
+      ? { label: 'Acendendo a Brasa', desc: 'Mande um Pix pra soltar a primeira fumaça!', icon: '🔥' }
+      : milestones[nextMilestoneIndex - 1];
+
+  const nextMilestone = nextMilestoneIndex === -1 ? null : milestones[nextMilestoneIndex];
+
+  // Cálculo da queima do beck (avanço contínuo da brasa)
+  // Progresso relativo ao próximo marco ou escala contínua
+  const targetBurnBasis = nextMilestone ? nextMilestone.threshold : 3500;
+  const burnPercentage = Math.min(95, Math.max(10, Math.round((totalAmount / targetBurnBasis) * 85) + 10));
 
   const cotas = [
     { value: 20, label: 'Seda & Piteira', icon: '🌿', desc: 'Kit essencial pro esquenta' },
@@ -43,17 +66,6 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
     { value: 100, label: 'Picanha & Churrasco', icon: '🥩', desc: 'Cota de respeito na brasa' },
     { value: 200, label: 'Cota VIP Glorioso', icon: '👑', desc: 'Padrinho oficial da resenha' },
   ];
-
-  const getStageInfo = (pct: number) => {
-    if (pct === 0) return { title: 'Baseado Apagado', desc: 'Manda o primeiro Pix pra acender a brasa do Igor!' };
-    if (pct < 25) return { title: '🔥 Primeiro Pega!', desc: 'A brasa acendeu e a fumaça começou a subir!' };
-    if (pct < 50) return { title: '💨 Metade do Beck!', desc: 'O Igor já tá na melhor vibe pro dia 24/10!' };
-    if (pct < 75) return { title: '⭐️ Quase no Fim!', desc: 'Ponta mágica! Falta pouco pra completar a meta!' };
-    if (pct < 100) return { title: '🚀 Reta Final!', desc: 'Falta só um teco pra queimar essa bomba inteira!' };
-    return { title: '🏆 META ATINGIDA!', desc: 'A BRISA TÁ COMPLETA! SALVE O GLORIOSO!' };
-  };
-
-  const stage = getStageInfo(percentage);
 
   const handleCopyPix = () => {
     navigator.clipboard.writeText(pixKey);
@@ -65,7 +77,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
     setIsPuffing(true);
     onPuff();
     confetti({
-      particleCount: 40,
+      particleCount: 45,
       spread: 60,
       origin: { y: 0.7 },
       colors: ['#16a34a', '#eab308', '#dc2626'],
@@ -118,21 +130,26 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#16a34a]/15 text-[#16a34a] text-xs font-serif-vintage font-bold mb-1">
               <Flame size={14} className="text-[#dc2626] animate-bounce" />
-              <span>A VAQUINHA OFICIAL DOS 30 ANOS</span>
+              <span>VAQUINHA LIVRE DOS 30 ANOS • SEM META FIXA</span>
             </div>
             <h3 className="font-serif-vintage font-black text-2xl sm:text-3xl tracking-tight text-[#26120c] uppercase">
               O BECKÔMETRO DO GLORIOSO
             </h3>
-            <p className="text-xs sm:text-sm font-serif-vintage italic text-[#7c5a45]">
-              {stage.title} • {stage.desc}
+            <p className="text-xs sm:text-sm font-serif-vintage italic text-[#7c5a45] mt-0.5">
+              {currentMilestone.icon} {currentMilestone.label} • {currentMilestone.desc}
+              {nextMilestone && (
+                <span className="block sm:inline text-[#b45309] font-bold not-italic sm:ml-1">
+                  (Faltam R$ {(nextMilestone.threshold - totalAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para {nextMilestone.label})
+                </span>
+              )}
             </p>
           </div>
 
-          {/* Placar Financeiro */}
-          <div className="flex items-center gap-4 bg-[#f2e7d5] p-3 px-5 rounded-2xl border border-[#ded0b9] self-start sm:self-auto shadow-inner">
+          {/* Placar Financeiro Livre */}
+          <div className="flex items-center gap-3 sm:gap-4 bg-[#f2e7d5] p-2.5 sm:p-3 px-4 sm:px-5 rounded-2xl border border-[#ded0b9] self-start sm:self-auto shadow-inner">
             <div>
               <span className="text-[10px] font-serif-vintage uppercase font-bold text-[#8c6d58] block">
-                Arrecadado
+                Total Fortalecido
               </span>
               <span className="text-xl sm:text-2xl font-black font-serif-vintage text-[#26120c]">
                 R$ {totalAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -141,38 +158,35 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
             <div className="w-[1px] h-8 bg-[#ded0b9]" />
             <div>
               <span className="text-[10px] font-serif-vintage uppercase font-bold text-[#8c6d58] block">
-                Meta da Festa
+                Fortalecedores
               </span>
               <span className="text-xl sm:text-2xl font-black font-serif-vintage text-[#16a34a]">
-                R$ {targetAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                {donations.length} amigos
               </span>
             </div>
             <div className="w-[1px] h-8 bg-[#ded0b9]" />
             <div className="text-right">
               <span className="text-[10px] font-serif-vintage uppercase font-bold text-[#8c6d58] block">
-                Queima
+                Nível da Vibe
               </span>
-              <span className="text-xl sm:text-2xl font-black font-serif-vintage text-[#dc2626]">
-                {percentage}%
+              <span className="text-xs sm:text-sm font-black font-serif-vintage text-[#dc2626] flex items-center gap-1 justify-end">
+                <span>{currentMilestone.icon}</span>
+                <span className="hidden sm:inline">{currentMilestone.label}</span>
               </span>
             </div>
           </div>
         </div>
 
         {/* ESTRUTURA VISUAL DO BASEADO REGGAE (QUEIMA INVERSA) */}
-        <div className="my-8 relative py-4 px-1">
+        <div className="my-7 relative py-4 px-1">
           {/* Fumaça animada subindo da posição exata da brasa */}
           <div
             className="absolute -top-10 transition-all duration-700 ease-out pointer-events-none flex flex-col items-center z-30"
-            style={{ left: `calc(${Math.min(92, Math.max(8, percentage))}% + 20px)` }}
+            style={{ left: `calc(${burnPercentage}% + 15px)` }}
           >
-            {percentage > 0 && (
-              <>
-                <div className="w-5 h-5 rounded-full bg-neutral-400/35 blur-sm animate-smoke-curl" />
-                <div className="w-6 h-6 rounded-full bg-amber-400/25 blur-md animate-smoke-curl -mt-2" style={{ animationDelay: '0.6s' }} />
-                <div className="w-7 h-7 rounded-full bg-neutral-300/20 blur-md animate-smoke-curl -mt-3" style={{ animationDelay: '1.2s' }} />
-              </>
-            )}
+            <div className="w-5 h-5 rounded-full bg-neutral-400/40 blur-sm animate-smoke-curl" />
+            <div className="w-6 h-6 rounded-full bg-amber-400/30 blur-md animate-smoke-curl -mt-2" style={{ animationDelay: '0.6s' }} />
+            <div className="w-7 h-7 rounded-full bg-neutral-300/25 blur-md animate-smoke-curl -mt-3" style={{ animationDelay: '1.2s' }} />
           </div>
 
           {/* O BASEADO HORIZONTAL */}
@@ -185,8 +199,9 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                 <div className="w-1/3 h-full bg-[#eab308]" />
                 <div className="w-1/3 h-full bg-[#dc2626]" />
               </div>
-              <div className="relative z-10 bg-black/80 px-2 py-1 rounded-md text-[10px] font-black font-serif-vintage text-white shadow-md border border-white/40">
-                IGOR 30
+              <div className="relative z-10 bg-black/80 px-2 py-1 rounded-md text-[10px] font-black font-serif-vintage text-white shadow-md border border-white/40 flex items-center gap-1">
+                <CannabisLeafIcon className="w-3 h-3 text-[#16a34a]" />
+                <span>IGOR 30</span>
               </div>
             </div>
 
@@ -202,57 +217,53 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                 <span>🌿</span>
               </div>
 
-              {/* Área queimada (cinza & brasa) que avança conforme a vaquinha sobe */}
+              {/* Área queimada (cinza & brasa) que avança conforme as contribuições entram */}
               <motion.div
                 initial={false}
-                animate={{ width: `${Math.max(6, percentage)}%` }}
+                animate={{ width: `${burnPercentage}%` }}
                 transition={{ type: 'spring', stiffness: 50, damping: 15 }}
                 className="h-full flex items-center justify-end relative"
                 style={{
-                  background: percentage === 0
-                    ? 'linear-gradient(to right, #44403c, #57534e)'
-                    : 'linear-gradient(to right, #1c1917 0%, #292524 50%, #78350f 80%, #b45309 92%, #ea580c 100%)'
+                  background: 'linear-gradient(to right, #1c1917 0%, #292524 50%, #78350f 80%, #b45309 92%, #ea580c 100%)'
                 }}
               >
                 {/* Textura de cinza */}
                 <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#78716c_1px,transparent_1px)] [background-size:6px_6px]" />
 
                 {/* A BRASA VIVA INCANDESCENTE */}
-                {percentage > 0 && (
-                  <motion.div
-                    animate={isPuffing ? { scale: [1, 1.4, 1.1] } : { scale: [1, 1.15, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-                    className="relative z-30 flex items-center justify-center -mr-3"
-                  >
-                    <div className="w-7 sm:w-8 h-12 sm:h-14 rounded-full bg-gradient-to-r from-orange-600 via-red-500 to-amber-300 shadow-[0_0_20px_#f97316,0_0_35px_#dc2626] flex items-center justify-center">
-                      <div className="w-2 h-5 bg-white rounded-full blur-[1px] animate-pulse" />
-                    </div>
-                  </motion.div>
-                )}
+                <motion.div
+                  animate={isPuffing ? { scale: [1, 1.45, 1.1] } : { scale: [1, 1.15, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
+                  className="relative z-30 flex items-center justify-center -mr-3"
+                >
+                  <div className="w-7 sm:w-8 h-12 sm:h-14 rounded-full bg-gradient-to-r from-orange-600 via-red-500 to-amber-300 shadow-[0_0_20px_#f97316,0_0_35px_#dc2626] flex items-center justify-center">
+                    <div className="w-2 h-5 bg-white rounded-full blur-[1px] animate-pulse" />
+                  </div>
+                </motion.div>
               </motion.div>
 
               {/* Seda que ainda falta queimar */}
               <div className="flex-1 h-full relative flex items-center justify-center">
-                <span className="text-[11px] sm:text-xs font-serif-vintage tracking-widest uppercase font-bold text-[#7c5a45]/70 select-none px-3 text-center">
-                  {percentage < 100 ? 'Seda Pura • Queima da Paz' : 'FOGO EM TUDO! META BATIDA!'}
+                <span className="text-[11px] sm:text-xs font-serif-vintage tracking-widest uppercase font-bold text-[#7c5a45]/80 select-none px-3 text-center">
+                  {nextMilestone ? `Rumo a ${nextMilestone.label}` : 'FOGO LIVRE • RESENHA HISTÓRICA!'}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Marcadores de Níveis */}
+          {/* Marcadores de Níveis da Festa */}
           <div className="flex justify-between text-xs font-serif-vintage text-[#7c5a45] mt-2.5 px-2">
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-[#78716c]" />
-              0% (Apagado)
+              <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
+              Esquenta
             </span>
             <span className="flex items-center gap-1 font-bold text-[#eab308]">
               <span className="w-2 h-2 rounded-full bg-[#eab308]" />
-              50% (Na metade)
+              Churrasco
             </span>
-            <span className="flex items-center gap-1 font-bold text-[#16a34a]">
-              <Sparkles size={14} className="text-[#16a34a]" />
-              100% (Brisado Completo)
+            <span className="flex items-center gap-1 font-bold text-[#dc2626]">
+              <Sparkles size={14} className="text-[#dc2626]" />
+              Lendário
             </span>
           </div>
         </div>
@@ -261,7 +272,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
         <div className="flex justify-center mb-6">
           <button
             onClick={handlePuffClick}
-            className="px-5 py-2.5 rounded-full bg-[#f2e7d5] hover:bg-[#ebdcc5] text-[#26120c] font-serif-vintage font-bold text-xs uppercase tracking-wider border border-[#ded0b9] shadow-md flex items-center gap-2 active:scale-95 transition-all"
+            className="px-5 py-2.5 rounded-full bg-[#f2e7d5] hover:bg-[#ebdcc5] text-[#26120c] font-serif-vintage font-bold text-xs uppercase tracking-wider border border-[#ded0b9] shadow-md flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
           >
             <Wind size={15} className="text-[#16a34a]" />
             <span>Puxar uma Fumaça Comemorativa</span>
@@ -269,23 +280,31 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
           </button>
         </div>
 
-        {/* BARRA DE PROGRESSO TRICOLOR REGGAE & PLACAR */}
+        {/* BARRA DE POTÊNCIA DA RESENHA (SEM META, MARCOS LIVRES) */}
         <div className="p-4 rounded-2xl bg-[#f5ede0] border border-[#e5d8c3] mb-6">
           <div className="flex justify-between text-xs font-serif-vintage font-bold text-[#26120c] mb-1.5">
-            <span>Progresso da Arrecadação</span>
-            <span className="text-[#dc2626] font-black">{percentage}% Concluído</span>
+            <span className="flex items-center gap-1.5">
+              <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
+              <span>Potência da Resenha</span>
+            </span>
+            <span className="text-[#b45309] font-black">
+              {currentMilestone.label}
+            </span>
           </div>
 
           <div className="w-full h-4 rounded-full bg-[#e5d8c3] p-0.5 border border-[#d4c3a7] overflow-hidden shadow-inner">
             <motion.div
               initial={false}
-              animate={{ width: `${Math.max(6, percentage)}%` }}
+              animate={{ width: `${burnPercentage}%` }}
               transition={{ type: 'spring', stiffness: 50, damping: 15 }}
               className="h-full rounded-full bg-gradient-to-r from-[#16a34a] via-[#eab308] to-[#dc2626] shadow-sm relative"
             >
               <div className="absolute inset-0 bg-white/20 animate-pulse" />
             </motion.div>
           </div>
+          <span className="text-[10px] font-serif-vintage italic text-[#7c5a45] block mt-1.5 text-center">
+            Sem meta estipulada • Qualquer valor fortalece a fumaça e a celebração do Igor!
+          </span>
         </div>
 
         {/* ÁREA DO PIX: QR CODE + CHAVE + COTAS DOS AMIGOS */}
@@ -331,7 +350,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
 
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-8 h-8 rounded-full bg-[#eab308] border-2 border-[#26120c] flex items-center justify-center text-xs shadow-md">
-                  🦁
+                  <CannabisLeafIcon className="w-5 h-5 text-[#26120c]" />
                 </div>
               </div>
             </div>
@@ -343,7 +362,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
 
               <button
                 onClick={handleCopyPix}
-                className={`w-full py-2 px-3 rounded-xl text-xs font-serif-vintage font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm ${
+                className={`w-full py-2 px-3 rounded-xl text-xs font-serif-vintage font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer ${
                   copied
                     ? 'bg-[#16a34a] text-white'
                     : 'bg-[#26120c] hover:bg-[#402015] text-[#faf5eb]'
@@ -363,7 +382,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                   Escolha uma Cota da Festa
                 </h4>
                 <span className="text-xs font-serif-vintage italic text-[#7c5a45]">
-                  Qualquer valor é bem-vindo
+                  Ou mande qualquer quantia
                 </span>
               </div>
 
@@ -376,7 +395,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                       setCustomAmount('');
                       setShowModal(true);
                     }}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-[#f5ede0] hover:bg-[#ede0ce] border border-[#ded0b9] text-left transition-all active:scale-98 group"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-[#f5ede0] hover:bg-[#ede0ce] border border-[#ded0b9] text-left transition-all active:scale-98 group cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="text-xl p-1.5 rounded-xl bg-white/70 border border-[#ded0b9]">
@@ -401,7 +420,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
 
             <button
               onClick={() => setShowModal(true)}
-              className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-[#16a34a] via-[#ca8a04] to-[#dc2626] text-white font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition-all"
+              className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-[#16a34a] via-[#ca8a04] to-[#dc2626] text-white font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer"
             >
               <PlusCircle size={16} />
               <span>Registrar / Confirmar Pix no Beckômetro</span>
@@ -447,92 +466,95 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
             >
               <button
                 onClick={() => setShowModal(false)}
-                className="absolute top-4 right-4 text-[#8c6d58] hover:text-[#26120c] text-lg font-bold w-8 h-8 rounded-full bg-[#f2e7d5] flex items-center justify-center"
+                className="absolute top-4 right-4 text-[#8c6d58] hover:text-[#26120c] text-lg font-bold w-8 h-8 rounded-full bg-[#f2e7d5] flex items-center justify-center cursor-pointer"
               >
                 ✕
               </button>
 
-              <div className="text-center mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-[#efe3d0] border border-[#ded0b9] flex items-center justify-center mx-auto mb-2 text-[#b45309]">
-                  <Heart size={24} className="animate-pulse" />
-                </div>
-                <h4 className="text-lg font-serif-vintage font-bold text-[#26120c] uppercase">
-                  Fortalecer a Festa do Igor
+              <div className="flex items-center gap-2 mb-3">
+                <CannabisLeafIcon className="w-5 h-5 text-[#16a34a]" />
+                <h4 className="font-serif-vintage font-black text-lg text-[#26120c] uppercase">
+                  Fortalecer a Resenha
                 </h4>
-                <p className="text-xs font-serif-vintage text-[#7c5a45]">
-                  Seu apoio acende o Beckômetro na hora!
-                </p>
               </div>
 
+              <p className="text-xs font-serif-vintage text-[#7c5a45] mb-4">
+                Envie seu Pix de qualquer quantia para a chave <strong className="text-[#26120c] font-mono">{pixKey}</strong> e deixe seu recado para o aniversariante!
+              </p>
+
               <form onSubmit={handleConfirmDonation} className="space-y-3">
+                {/* Seleção de Valor */}
                 <div>
-                  <label className="text-xs font-bold font-serif-vintage text-[#593d31] block mb-1">
+                  <label className="text-[10px] font-serif-vintage uppercase font-bold text-[#7c5a45] block mb-1">
                     Valor da Contribuição (R$)
                   </label>
-                  <div className="grid grid-cols-3 gap-2 mb-2">
-                    {[20, 50, 100].map((val) => (
+                  <div className="grid grid-cols-4 gap-1.5 mb-2">
+                    {[20, 50, 100, 200].map((val) => (
                       <button
-                        key={val}
                         type="button"
+                        key={val}
                         onClick={() => {
                           setSelectedCota(val);
                           setCustomAmount('');
                         }}
-                        className={`py-1.5 rounded-xl text-xs font-serif-vintage font-bold border transition-all ${
+                        className={`py-1.5 rounded-lg text-xs font-bold font-serif-vintage transition-all cursor-pointer ${
                           selectedCota === val
-                            ? 'bg-[#26120c] text-[#faf5eb] border-[#26120c]'
-                            : 'bg-[#f5ede0] text-[#593d31] border-[#ded0b9]'
+                            ? 'bg-[#16a34a] text-white shadow-xs'
+                            : 'bg-[#f2e7d5] text-[#26120c] hover:bg-[#e8dcce]'
                         }`}
                       >
-                        R$ {val}
+                        R${val}
                       </button>
                     ))}
                   </div>
 
                   <input
                     type="number"
-                    placeholder="Ou digite outro valor..."
+                    placeholder="Ou digite outro valor livre..."
                     value={customAmount}
                     onChange={(e) => {
                       setCustomAmount(e.target.value);
                       setSelectedCota(null);
                     }}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fffdfa] border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#b45309]"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
                   />
                 </div>
 
+                {/* Nome de quem doou */}
                 <div>
-                  <label className="text-xs font-bold font-serif-vintage text-[#593d31] block mb-1">
+                  <label className="text-[10px] font-serif-vintage uppercase font-bold text-[#7c5a45] block mb-1">
                     Seu Nome ou Apelido
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Gabriel da Resenha"
+                    placeholder="Ex: Pedrinho, Carol..."
                     value={donorName}
                     onChange={(e) => setDonorName(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fffdfa] border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#b45309]"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
                   />
                 </div>
 
+                {/* Recado pro Igor */}
                 <div>
-                  <label className="text-xs font-bold font-serif-vintage text-[#593d31] block mb-1">
-                    Recado pro Igor (O Glorioso)
+                  <label className="text-[10px] font-serif-vintage uppercase font-bold text-[#7c5a45] block mb-1">
+                    Mensagem pro Igor
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Mande uma mensagem ou zoeira pro aniversariante..."
+                    placeholder="Ex: Parabéns meu irmão, o Glorioso é eterno!"
                     value={donorMessage}
                     onChange={(e) => setDonorMessage(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-[#fffdfa] border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#b45309] resize-none"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a] resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#16a34a] via-[#ca8a04] to-[#dc2626] text-white font-serif-vintage font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95"
+                  className="w-full py-3 rounded-xl bg-[#26120c] hover:bg-[#381a10] text-[#faf5eb] font-serif-vintage font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all mt-2 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Confirmar Salve 🔥
+                  <Heart size={14} className="text-[#dc2626]" />
+                  <span>Confirmar & Mandar Fumaça</span>
                 </button>
               </form>
             </motion.div>

@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Clock, Check, Calendar as CalendarIcon } from 'lucide-react';
+import { Clock, Check, Calendar as CalendarIcon, Flame } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { CannabisLeafIcon } from './CannabisLeafIcon';
 
 export const ReggaeCalendar: React.FC = () => {
   const targetDate = new Date('2026-10-24T20:00:00').getTime();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [rsvpName, setRsvpName] = useState('');
   const [rsvpDone, setRsvpDone] = useState(false);
+  const [selectedDayInfo, setSelectedDayInfo] = useState<string | null>(null);
+
+  // Data atual da resenha (Outubro 2026 - Hoje é dia 7)
+  const currentDayOfMonth = 7;
+  const targetPartyDay = 24;
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -34,121 +40,259 @@ export const ReggaeCalendar: React.FC = () => {
     if (!rsvpName.trim()) return;
     setRsvpDone(true);
     confetti({
-      particleCount: 70,
-      spread: 60,
+      particleCount: 80,
+      spread: 70,
       origin: { y: 0.6 },
       colors: ['#16a34a', '#eab308', '#dc2626', '#faf5eb'],
     });
   };
 
+  // Dias da semana (Início no Domingo)
+  const weekDays = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+  // Outubro 2026 começa numa Quinta-feira (índice 4: DOM=0, SEG=1, TER=2, QUA=3, QUI=4)
+  const firstDayWeekIndex = 4;
+  const daysInOctober = 31;
+
+  // Células do calendário (vazias antes do dia 1 + dias 1 a 31)
+  const calendarCells = [];
+  for (let i = 0; i < firstDayWeekIndex; i++) {
+    calendarCells.push({ type: 'empty', key: `empty-${i}` });
+  }
+  for (let day = 1; day <= daysInOctober; day++) {
+    calendarCells.push({ type: 'day', day, key: `day-${day}` });
+  }
+
+  const handleDayClick = (day: number) => {
+    if (day < currentDayOfMonth) {
+      setSelectedDayInfo(`Dia ${day}/10 já foi queimado! Menos um dia até o Trintou do Igor! 🌿`);
+    } else if (day === currentDayOfMonth) {
+      setSelectedDayInfo(`Hoje é dia 7 de Outubro! Brasa acesa e contagem a mil! 🔥`);
+    } else if (day === targetPartyDay) {
+      setSelectedDayInfo(`⭐️ 24 DE OUTUBRO: O GRANDE DIA! Festa Oficial de 30 Anos do Igor!`);
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        colors: ['#16a34a', '#eab308', '#dc2626'],
+      });
+    } else if (day < targetPartyDay) {
+      const remaining = targetPartyDay - day;
+      setSelectedDayInfo(`Dia ${day}/10: Faltam apenas ${remaining} dias para a comemoração!`);
+    } else {
+      setSelectedDayInfo(`Dia ${day}/10: Pós-festa e resenha dos sobreviventes!`);
+    }
+  };
+
   return (
     <div id="agenda" className="relative">
-      {/* Fita de Papel Antigo */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#f0e3cc]/80 border border-[#dfceb0] shadow-xs transform -rotate-1 z-20 pointer-events-none" />
+      {/* Fita de Papel Antigo no topo */}
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#f0e3cc]/90 border border-[#dfceb0] shadow-xs transform -rotate-1 z-20 pointer-events-none flex items-center justify-center">
+        <span className="text-[10px] font-black uppercase font-serif-vintage tracking-widest text-[#78350f]">
+          Outubro • 2026
+        </span>
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="rounded-3xl bg-[#faf5eb] text-[#2c1810] p-6 sm:p-8 shadow-2xl border-2 border-[#e5decb] relative overflow-hidden"
+        className="rounded-3xl bg-[#faf5eb] text-[#2c1810] p-5 sm:p-7 shadow-2xl border-2 border-[#e5decb] relative overflow-hidden"
       >
         {/* Header do Calendário */}
-        <div className="flex items-center justify-between pb-3 border-b border-[#e5decb]">
-          <div className="flex items-center gap-2">
-            <CalendarIcon size={20} className="text-[#b45309]" />
+        <div className="flex items-center justify-between pb-3 border-b border-[#e5decb] mt-1">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-[#f5ede0] border border-[#e5d8c3] text-[#b45309]">
+              <CalendarIcon size={20} />
+            </div>
             <div>
               <h3 className="font-serif-vintage font-black text-lg sm:text-xl tracking-tight text-[#26120c] uppercase">
-                CALENDÁRIO DA RESENHA
+                CALENDÁRIO DO GLORIOSO
               </h3>
-              <span className="text-xs font-serif-vintage text-[#7c5a45] uppercase tracking-wider block">
-                OUTUBRO 2026
+              <span className="text-xs font-serif-vintage text-[#7c5a45] tracking-wide block">
+                Cada dia que passa vira fumaça até o dia 24/10!
               </span>
             </div>
           </div>
-          <span className="text-xs font-serif-vintage font-bold px-2.5 py-1 bg-[#efe4cf] rounded-md text-[#593d31]">
-            24/10
+          <span className="text-xs font-serif-vintage font-bold px-2.5 py-1 bg-[#16a34a]/15 text-[#15803d] rounded-lg border border-[#16a34a]/30 flex items-center gap-1">
+            <CannabisLeafIcon className="w-3.5 h-3.5 text-[#16a34a]" />
+            <span>Outubro</span>
           </span>
         </div>
 
-        {/* Linha do Tempo de Datas */}
-        <div className="my-4 space-y-2.5">
-          {/* Evento Esquenta */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#f5ede0] border border-[#e5d8c3]">
-            <span className="w-8 h-8 rounded-lg bg-[#26120c] text-[#faf5eb] font-bold flex items-center justify-center text-xs flex-shrink-0">
-              10
-            </span>
-            <div>
-              <span className="font-handwriting text-lg font-bold text-[#26120c] block leading-tight">
-                Esquenta no Quintal & Sessão Positiva
-              </span>
-              <span className="text-[11px] text-[#7c5a45]">
-                Início das comemorações dos 30 anos
-              </span>
-            </div>
+        {/* Legenda Explicativa */}
+        <div className="my-3 flex items-center justify-between text-[11px] font-serif-vintage text-[#7c5a45] bg-[#f5ede0]/70 p-2 rounded-xl border border-[#e5d8c3]">
+          <div className="flex items-center gap-1.5">
+            <CannabisLeafIcon className="w-3.5 h-3.5 text-[#16a34a]" />
+            <span>= Dias já passados (Fumados)</span>
           </div>
-
-          {/* O DIA D — 24 DE OUTUBRO (Destaque Amarelo Caneta Marca-Texto) */}
-          <div className="p-3.5 rounded-2xl bg-[#fef08a] border-2 border-[#ca8a04] shadow-md transform rotate-[-0.5deg]">
-            <div className="flex items-center justify-between mb-1">
-              <span className="px-2 py-0.5 rounded bg-[#ca8a04] text-white text-[10px] font-black uppercase">
-                O GRANDE DIA
-              </span>
-              <span className="text-xs font-black text-[#854d0e]">
-                SÁBADO • A PARTIR DAS 20H
-              </span>
-            </div>
-            <span className="font-handwriting text-2xl font-bold text-[#713f12] block leading-tight">
-              24 — A Festa Oficial de 30 Anos do Igor!
-            </span>
-            <span className="text-xs text-[#854d0e] font-serif-vintage block mt-1">
-              Churrasco completo, bebidas geladas, muita fumaça e parabéns!
-            </span>
-          </div>
-
-          {/* Evento Pós-Festa */}
-          <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#f5ede0] border border-[#e5d8c3]">
-            <span className="w-8 h-8 rounded-lg bg-[#8c6d58] text-[#faf5eb] font-bold flex items-center justify-center text-xs flex-shrink-0">
-              25
-            </span>
-            <div>
-              <span className="font-handwriting text-lg font-bold text-[#26120c] block leading-tight">
-                Almoço de Ressaca & Resenha Coletiva
-              </span>
-              <span className="text-[11px] text-[#7c5a45]">
-                Para os sobreviventes que aguentarem até o final
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 font-bold text-[#b45309]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] animate-ping" />
+            <span>24/10 = Festa 30 Anos</span>
           </div>
         </div>
 
-        {/* CONTADOR REGRESSIVO */}
-        <div className="p-4 rounded-2xl bg-[#f2e7d5] border border-[#e0d2bc] my-4 text-center">
+        {/* GRID DO CALENDÁRIO MENSAL REAL */}
+        <div className="my-2 bg-[#f6eee2] p-3 sm:p-4 rounded-2xl border border-[#e2d5c0] shadow-inner">
+          {/* Cabeçalho dos Dias da Semana */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5 mb-2 text-center">
+            {weekDays.map((wd, idx) => (
+              <span
+                key={wd}
+                className={`text-[10px] sm:text-xs font-black font-serif-vintage tracking-wider ${
+                  idx === 0 || idx === 6 ? 'text-[#b45309]' : 'text-[#7c5a45]'
+                }`}
+              >
+                {wd}
+              </span>
+            ))}
+          </div>
+
+          {/* Células dos Dias de Outubro */}
+          <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+            {calendarCells.map((cell) => {
+              if (cell.type === 'empty') {
+                return (
+                  <div
+                    key={cell.key}
+                    className="aspect-square rounded-lg bg-transparent opacity-10"
+                  />
+                );
+              }
+
+              const day = cell.day as number;
+              const hasPassed = day < currentDayOfMonth;
+              const isToday = day === currentDayOfMonth;
+              const isPartyDay = day === targetPartyDay;
+
+              // Dia 24/10: O Grande Dia
+              if (isPartyDay) {
+                return (
+                  <motion.button
+                    key={cell.key}
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleDayClick(day)}
+                    className="aspect-square rounded-xl bg-gradient-to-tr from-[#dc2626] via-[#eab308] to-[#16a34a] p-0.5 shadow-lg relative group cursor-pointer"
+                  >
+                    <div className="w-full h-full rounded-[10px] bg-[#fef08a] flex flex-col items-center justify-center relative overflow-hidden">
+                      <span className="text-[10px] font-black text-[#854d0e] leading-none">
+                        24
+                      </span>
+                      <Flame size={12} className="text-[#dc2626] animate-bounce mt-0.5" />
+                      <div className="absolute inset-0 bg-[#eab308]/20 animate-pulse" />
+                    </div>
+                  </motion.button>
+                );
+              }
+
+              // Dias que já passaram: RETIRE O NÚMERO E COLOQUE A FOLHA DA MACONHA (SVG DA PASTA)!
+              if (hasPassed) {
+                return (
+                  <motion.button
+                    key={cell.key}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => handleDayClick(day)}
+                    title={`Dia ${day}/10 já passou (Fumado)`}
+                    className="aspect-square rounded-xl bg-[#e8f5e9] border border-[#a5d6a7] shadow-xs flex flex-col items-center justify-center p-1 group cursor-pointer hover:bg-[#c8e6c9] transition-colors relative"
+                  >
+                    <CannabisLeafIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#16a34a] group-hover:scale-110 transition-transform drop-shadow-xs" />
+                    <span className="text-[8px] font-bold text-[#2e7d32] font-mono leading-none mt-0.5 opacity-60">
+                      {day}
+                    </span>
+                  </motion.button>
+                );
+              }
+
+              // Hoje (Dia 7): Fumaça e Brasa viva
+              if (isToday) {
+                return (
+                  <motion.button
+                    key={cell.key}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => handleDayClick(day)}
+                    title="Hoje! Dia 7 de Outubro"
+                    className="aspect-square rounded-xl bg-[#fef3c7] border-2 border-[#f59e0b] shadow-md flex flex-col items-center justify-center p-1 group cursor-pointer relative overflow-hidden animate-pulse"
+                  >
+                    <CannabisLeafIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#d97706] group-hover:scale-110 transition-transform" />
+                    <span className="text-[8px] font-black text-[#b45309] font-mono leading-none mt-0.5">
+                      HOJE
+                    </span>
+                  </motion.button>
+                );
+              }
+
+              // Dias futuros (8 até 23 e pós-24)
+              return (
+                <motion.button
+                  key={cell.key}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleDayClick(day)}
+                  className={`aspect-square rounded-xl flex items-center justify-center text-xs font-bold font-serif-vintage transition-all cursor-pointer ${
+                    day < targetPartyDay
+                      ? 'bg-[#faf5eb] border border-[#e0d3bc] text-[#3d2419] hover:border-[#b45309] hover:bg-white shadow-xs'
+                      : 'bg-[#f0e6d6]/60 border border-[#e5dac8] text-[#8c6d58] hover:bg-[#faf5eb]'
+                  }`}
+                >
+                  {day}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mensagem Interativa ao Clicar no Dia */}
+        {selectedDayInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-2.5 rounded-xl bg-[#fef9c3] border border-[#fde047] text-center text-xs font-serif-vintage font-bold text-[#854d0e] my-2"
+          >
+            {selectedDayInfo}
+          </motion.div>
+        )}
+
+        {/* Resumo do Progresso até 24/10 */}
+        <div className="flex items-center justify-between text-xs font-serif-vintage font-bold text-[#593d31] px-1 py-1">
+          <span className="flex items-center gap-1.5 text-[#16a34a]">
+            <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
+            <span>7 dias já queimados</span>
+          </span>
+          <span className="text-[#b45309]">
+            Faltam 17 dias pro Trintou!
+          </span>
+        </div>
+
+        {/* CONTADOR REGRESSIVO EM TEMPO REAL */}
+        <div className="p-3.5 rounded-2xl bg-[#f2e7d5] border border-[#e0d2bc] my-3 text-center">
           <div className="flex items-center justify-center gap-1.5 text-xs font-serif-vintage font-bold text-[#593d31] mb-2 uppercase">
             <Clock size={15} className="text-[#b45309]" />
-            <span>Faltam para a Festa do Igor:</span>
+            <span>Tempo até o Aniversário:</span>
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            <div className="p-2.5 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
-              <span className="block text-2xl font-black text-[#26120c] font-mono leading-none">
+            <div className="p-2 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
+              <span className="block text-xl sm:text-2xl font-black text-[#26120c] font-mono leading-none">
                 {timeLeft.days}
               </span>
               <span className="text-[10px] uppercase font-bold text-[#8c6d58]">Dias</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
-              <span className="block text-2xl font-black text-[#26120c] font-mono leading-none">
+            <div className="p-2 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
+              <span className="block text-xl sm:text-2xl font-black text-[#26120c] font-mono leading-none">
                 {String(timeLeft.hours).padStart(2, '0')}
               </span>
               <span className="text-[10px] uppercase font-bold text-[#8c6d58]">Horas</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
-              <span className="block text-2xl font-black text-[#b45309] font-mono leading-none">
+            <div className="p-2 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
+              <span className="block text-xl sm:text-2xl font-black text-[#b45309] font-mono leading-none">
                 {String(timeLeft.minutes).padStart(2, '0')}
               </span>
               <span className="text-[10px] uppercase font-bold text-[#8c6d58]">Min</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
-              <span className="block text-2xl font-black text-[#dc2626] font-mono leading-none animate-pulse">
+            <div className="p-2 rounded-xl bg-[#faf5eb] border border-[#ded0b9] shadow-inner text-center">
+              <span className="block text-xl sm:text-2xl font-black text-[#dc2626] font-mono leading-none animate-pulse">
                 {String(timeLeft.seconds).padStart(2, '0')}
               </span>
               <span className="text-[10px] uppercase font-bold text-[#8c6d58]">Seg</span>
@@ -157,7 +301,7 @@ export const ReggaeCalendar: React.FC = () => {
         </div>
 
         {/* CONFIRMAÇÃO DE PRESENÇA NA LISTA */}
-        <div className="pt-3 border-t border-[#e5decb]">
+        <div className="pt-2 border-t border-[#e5decb]">
           {rsvpDone ? (
             <div className="p-3 rounded-xl bg-[#ecfdf5] border border-[#86efac] text-center text-xs text-[#166534] font-bold flex items-center justify-center gap-2">
               <Check size={18} /> Nome confirmado na lista VIP do Igor!
@@ -173,7 +317,7 @@ export const ReggaeCalendar: React.FC = () => {
               />
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl bg-[#26120c] hover:bg-[#402015] text-[#faf5eb] text-xs font-serif-vintage font-bold transition-all shadow-sm active:scale-95 flex-shrink-0"
+                className="px-4 py-2.5 rounded-xl bg-[#26120c] hover:bg-[#402015] text-[#faf5eb] text-xs font-serif-vintage font-bold transition-all shadow-sm active:scale-95 flex-shrink-0"
               >
                 Confirmar Presença
               </button>
