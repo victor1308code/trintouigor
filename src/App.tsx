@@ -9,9 +9,15 @@ import { ReggaeLocation } from './components/ReggaeLocation';
 export function App() {
   const [burstCount, setBurstCount] = useState(0);
 
-  // Inicia com 0 contribuições conforme solicitado
+  // Reseta o valor para 0 conforme solicitado
   const [donations, setDonations] = useState<Donation[]>(() => {
-    const saved = localStorage.getItem('trintou_igor_donations_reggae_v2');
+    try {
+      localStorage.removeItem('trintou_igor_donations_reggae');
+      localStorage.removeItem('trintou_igor_donations_reggae_v2');
+    } catch {
+      // ignore
+    }
+    const saved = localStorage.getItem('trintou_igor_donations_zero_v4');
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -25,7 +31,7 @@ export function App() {
   const totalAmount = donations.reduce((acc, curr) => acc + curr.amount, 0);
 
   useEffect(() => {
-    localStorage.setItem('trintou_igor_donations_reggae_v2', JSON.stringify(donations));
+    localStorage.setItem('trintou_igor_donations_zero_v4', JSON.stringify(donations));
   }, [donations]);
 
   const handleAddDonation = (newDonation: Omit<Donation, 'id' | 'timestamp'>) => {
