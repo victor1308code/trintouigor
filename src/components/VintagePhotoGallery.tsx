@@ -18,6 +18,23 @@ interface IgorPhoto {
   rotation: string;
 }
 
+function formatCommentTime(dateStr?: string) {
+  if (!dateStr) return 'Agora mesmo';
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+    if (diffSec < 60) return 'Agora mesmo';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `há ${diffMin} min`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `há ${diffHours}h`;
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  } catch {
+    return 'Recente';
+  }
+}
+
 export const VintagePhotoGallery: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<IgorPhoto | null>(null);
   const [newAuthor, setNewAuthor] = useState('');
@@ -41,14 +58,6 @@ export const VintagePhotoGallery: React.FC = () => {
     };
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('trintou_igor_photo_cannabis_likes_v1', JSON.stringify(likesMap));
-    } catch {
-      // ignore
-    }
-  }, [likesMap]);
-
   // Comentários dos visitantes (inicia totalmente zerado, sem comentários padrões)
   const [comments, setComments] = useState<PhotoComment[]>(() => {
     try {
@@ -62,13 +71,51 @@ export const VintagePhotoGallery: React.FC = () => {
     return [];
   });
 
-  useEffect(() => {
+  // Sincronização central ao vivo (polling a cada 3.5 segundos)
+  const fetchLiveData = async () => {
     try {
-      localStorage.setItem('trintou_igor_photo_comments_empty_v4', JSON.stringify(comments));
+      const [resComments, resLikes] = await Promise.all([
+        fetch('/api/comments').then((r) => (r.ok ? r.json() : null)),
+        fetch('/api/likes').then((r) => (r.ok ? r.json() : null)),
+      ]);
+
+      if (Array.isArray(resComments)) {
+        const formatted: PhotoComment[] = resComments.map((c: any) => ({
+          id: c.id,
+          photoId: String(c.photoId),
+          author: c.author,
+          text: c.text,
+          timestamp: formatCommentTime(c.createdAt),
+        }));
+        setComments(formatted);
+        try {
+          localStorage.setItem('trintou_igor_photo_comments_empty_v4', JSON.stringify(formatted));
+        } catch {
+          // ignore
+        }
+      }
+
+      if (resLikes && typeof resLikes === 'object') {
+        setLikesMap((prev) => {
+          const updated = { ...prev, ...resLikes };
+          try {
+            localStorage.setItem('trintou_igor_photo_cannabis_likes_v1', JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+          return updated;
+        });
+      }
     } catch {
-      // ignore
+      // Continua com estado local se offline
     }
-  }, [comments]);
+  };
+
+  useEffect(() => {
+    fetchLiveData();
+    const interval = setInterval(fetchLiveData, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
   // Lista de Fotos do Igor sem nenhuma legenda
   const photos: IgorPhoto[] = [
@@ -105,9 +152,10 @@ export const VintagePhotoGallery: React.FC = () => {
   ];
 
   // Ação de Curtir com a Folha de Maconha (inicia em 0)
-  const handleLike = (photoId: string, e?: React.MouseEvent) => {
+  const handleLike = async (photoId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
+    // Atualização otimista
     setLikesMap((prev) => ({
       ...prev,
       [photoId]: (prev[photoId] || 0) + 1,
@@ -138,22 +186,45 @@ export const VintagePhotoGallery: React.FC = () => {
         colors: ['#16a34a', '#22c55e', '#eab308'],
       });
     }
+
+    // Persiste no backend central para todos verem
+    try {
+      const res = await fetch('/api/likes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLikesMap((prev) => ({
+          ...prev,
+          [photoId]: data.count,
+        }));
+      }
+    } catch {
+      // offline fallback
+    }
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPhoto) return;
     if (!newAuthor.trim() || !newComment.trim()) return;
 
-    const item: PhotoComment = {
+    const author = newAuthor.trim();
+    const text = newComment.trim();
+    const photoId = selectedPhoto.id;
+
+    // Adiciona otimista
+    const optimisticItem: PhotoComment = {
       id: String(Date.now()),
-      photoId: selectedPhoto.id,
-      author: newAuthor.trim(),
-      text: newComment.trim(),
+      photoId,
+      author,
+      text,
       timestamp: 'Agora mesmo',
     };
 
-    setComments((prev) => [item, ...prev]);
+    setComments((prev) => [optimisticItem, ...prev]);
     setNewAuthor('');
     setNewComment('');
 
@@ -180,6 +251,20 @@ export const VintagePhotoGallery: React.FC = () => {
         spread: 70,
         origin: { y: 0.6 },
       });
+    }
+
+    // Envia pro backend central
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId, author, text }),
+      });
+      if (res.ok) {
+        fetchLiveData();
+      }
+    } catch {
+      // offline fallback
     }
   };
 

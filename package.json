@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "server": "node server/index.mjs",
     "deploy:oracle": "ssh -i \"$HOME/Nuvem/ssh-key-2026-03-17(4).key\" ubuntu@163.176.182.182 \"/home/ubuntu/deploy_trintou.sh\"",
     "cap:sync": "npm run build && npx cap sync",
     "cap:android": "npx cap open android"
