@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, Send, X, Sparkles, Trash2, RotateCcw } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, Trash2, RotateCcw, Copy, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 
@@ -16,6 +16,7 @@ interface IgorPhoto {
   id: string;
   src: string;
   rotation: string;
+  isQr?: boolean;
 }
 
 function formatCommentTime(dateStr?: string) {
@@ -47,21 +48,50 @@ const ALL_ROTATIONS = [
   'rotate-[1deg]',
 ];
 
-// Todas as 39 Fotos da Festa e do Igor
-const allPhotos: IgorPhoto[] = Array.from({ length: 39 }, (_, i) => {
-  const num = i + 1;
-  return {
-    id: String(num),
-    src: `/photos/igor-${num}.jpg`,
-    rotation: ALL_ROTATIONS[i % ALL_ROTATIONS.length],
-  };
-});
+// O QR Code Oficial que veio na pasta + Todas as 39 Fotos da Festa e do Igor
+const allPhotos: IgorPhoto[] = [
+  {
+    id: 'pix-oficial',
+    src: '/pix-qrcode-oficial.jpg',
+    rotation: 'rotate-[-1deg]',
+    isQr: true,
+  },
+  ...Array.from({ length: 39 }, (_, i) => {
+    const num = i + 1;
+    return {
+      id: String(num),
+      src: `/photos/igor-${num}.jpg`,
+      rotation: ALL_ROTATIONS[i % ALL_ROTATIONS.length],
+    };
+  }),
+];
 
 export const VintagePhotoGallery: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<IgorPhoto | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<IgorPhoto | null>(null);
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedPayload, setCopiedPayload] = useState(false);
+
+  const pixKeyPhone = '61982228996';
+  const pixKeyDisplay = '(61) 98222-8996';
+  const pixBeneficiary = 'Igor Henrique Anjos Marques';
+  const pixCopiaCola = '00020126770014br.gov.bcb.pix0114+5561982228996023730tou_do_Igor_Nicolau_(casa_e_comida)5204000053039865802BR5925IGOR_HENRIQUE_ANJOS_MARQU6008BRASILIA62290525dHiNyE5D1npOPQCJHtctq0t786304639D';
+
+  const handleCopyKey = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigator.clipboard.writeText(pixKeyPhone);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2500);
+  };
+
+  const handleCopyPayload = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigator.clipboard.writeText(pixCopiaCola);
+    setCopiedPayload(true);
+    setTimeout(() => setCopiedPayload(false), 2500);
+  };
 
   // Fotos excluídas da galeria (persistidas localmente e sincronizadas)
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>(() => {
@@ -82,7 +112,7 @@ export const VintagePhotoGallery: React.FC = () => {
     } catch {
       // ignore
     }
-    const initial: Record<string, number> = {};
+    const initial: Record<string, number> = { 'pix-oficial': 0 };
     for (let i = 1; i <= 39; i++) {
       initial[String(i)] = 0;
     }
@@ -330,6 +360,8 @@ export const VintagePhotoGallery: React.FC = () => {
     if (likesB !== likesA) {
       return likesB - likesA;
     }
+    if (a.isQr) return -1;
+    if (b.isQr) return 1;
     return Number(a.id) - Number(b.id);
   });
 
@@ -342,7 +374,7 @@ export const VintagePhotoGallery: React.FC = () => {
       {/* Título da Galeria / Mural */}
       <div className="text-center mb-10">
         <span className="text-xs font-serif-vintage tracking-widest text-[#e8c89b] uppercase block mb-1">
-          O MURAL DO GLORIOSO ({visiblePhotos.length} FOTOS)
+          O MURAL DO GLORIOSO ({visiblePhotos.length} REGISTROS)
         </span>
         <h2 className="text-3xl sm:text-4xl font-serif-vintage font-bold text-[#faf3e3] uppercase tracking-tight">
           Momentos & Registros do Igor
@@ -382,69 +414,94 @@ export const VintagePhotoGallery: React.FC = () => {
                   setPhotoToDelete(photo);
                 }}
                 className="absolute top-3 left-3 z-20 w-7 h-7 rounded-full bg-white/90 hover:bg-red-600 text-[#8c6d58] hover:text-white flex items-center justify-center transition-all shadow-md border border-[#dfceb0] hover:border-red-600 cursor-pointer active:scale-90"
-                title="Excluir esta foto"
+                title={photo.isQr ? "Ocultar QR Code" : "Excluir esta foto"}
               >
                 <Trash2 size={13} />
               </button>
 
-              {/* Selo #1 Mais Chapada quando houver curtidas */}
-              {isTop1 && (
+              {/* Selo #1 Mais Chapada OU Selo PIX Oficial */}
+              {photo.isQr ? (
+                <div className="absolute top-3 right-3 z-10 bg-[#eab308] text-[#26120c] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#ca8a04] flex items-center gap-1 pointer-events-none">
+                  <span>★ PIX OFICIAL DO IGOR</span>
+                </div>
+              ) : isTop1 ? (
                 <div className="absolute top-3 right-3 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
                   <CannabisLeafIcon className="w-3 h-3 text-[#fde047]" />
                   <span>#1 Mais Chapada</span>
                 </div>
-              )}
+              ) : null}
 
               {/* Fita crepe no topo da polaroid */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f0e3cc]/80 border border-[#dfceb0] shadow-xs transform rotate-1 pointer-events-none" />
 
               <div>
-                {/* A Foto com moldura clássica de Polaroid limpa sem texto */}
+                {/* A Foto ou QR Code com moldura clássica de Polaroid limpa */}
                 <div className="aspect-[4/5] overflow-hidden rounded-xl bg-neutral-900 border border-[#e5decb] relative">
                   <img
                     src={photo.src}
-                    alt="Foto do Igor"
+                    alt={photo.isQr ? "QR Code Oficial Pix do Igor" : "Foto do Igor"}
                     loading="lazy"
-                    className="w-full h-full object-cover object-top filter contrast-[1.05] hover:scale-105 transition-transform duration-500"
+                    className={`w-full h-full ${photo.isQr ? 'object-contain bg-white p-3' : 'object-cover object-top'} filter contrast-[1.05] hover:scale-105 transition-transform duration-500`}
                   />
                 </div>
               </div>
 
-              {/* Área de Ações: Curtir da Maconha + Botão Comentar */}
+              {/* Área de Ações: Curtir da Maconha + Botão Comentar / Copiar Pix */}
               <div className="mt-3.5 pt-2.5 border-t border-[#e8ded0] px-1">
-                <div className="flex items-center justify-between gap-2">
-                  {/* BOTÃO DE CURTIR DA MACONHA */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleLike(photo.id, e)}
-                    className="group py-1.5 px-3 rounded-full bg-[#f2e7d5] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-1.5 text-xs font-serif-vintage font-bold text-[#26120c] transition-all shadow-xs active:scale-90 cursor-pointer"
-                    title="Dar uma curtida de maconha nessa foto"
-                  >
-                    <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
-                    <span>{likesCount}</span>
-                  </button>
+                {photo.isQr ? (
+                  <div className="flex items-center justify-between gap-1.5">
+                    <button
+                      type="button"
+                      onClick={handleCopyKey}
+                      className="flex-1 py-1.5 px-2 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] flex items-center justify-center gap-1 text-[11px] font-serif-vintage font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                    >
+                      {copiedKey ? <Check size={12} className="text-[#16a34a]" /> : <Copy size={12} className="text-[#eab308]" />}
+                      <span>{copiedKey ? 'Chave Copiada!' : 'Copiar Chave'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopyPayload}
+                      className="flex-1 py-1.5 px-2 rounded-full bg-[#f2e7d5] hover:bg-[#e4d6c2] text-[#26120c] flex items-center justify-center gap-1 text-[11px] font-serif-vintage font-bold transition-all border border-[#ded0b9] shadow-xs active:scale-95 cursor-pointer"
+                    >
+                      {copiedPayload ? <Check size={12} className="text-[#16a34a]" /> : <Copy size={12} className="text-[#16a34a]" />}
+                      <span>{copiedPayload ? 'Código Copiado!' : 'Copia e Cola'}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-2">
+                    {/* BOTÃO DE CURTIR DA MACONHA */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleLike(photo.id, e)}
+                      className="group py-1.5 px-3 rounded-full bg-[#f2e7d5] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-1.5 text-xs font-serif-vintage font-bold text-[#26120c] transition-all shadow-xs active:scale-90 cursor-pointer"
+                      title="Dar uma curtida de maconha nessa foto"
+                    >
+                      <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
+                      <span>{likesCount}</span>
+                    </button>
 
-                  {/* BOTÃO COMENTAR */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPhoto(photo);
-                    }}
-                    className="py-1.5 px-3.5 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
-                  >
-                    <MessageCircle size={13} className="text-[#eab308]" />
-                    <span>Comentar</span>
-                    {photoComments.length > 0 && (
-                      <span className="bg-[#eab308] text-[#26120c] text-[10px] font-black px-1.5 rounded-full">
-                        {photoComments.length}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                    {/* BOTÃO COMENTAR */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedPhoto(photo);
+                      }}
+                      className="py-1.5 px-3.5 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                    >
+                      <MessageCircle size={13} className="text-[#eab308]" />
+                      <span>Comentar</span>
+                      {photoComments.length > 0 && (
+                        <span className="bg-[#eab308] text-[#26120c] text-[10px] font-black px-1.5 rounded-full">
+                          {photoComments.length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                )}
 
                 {/* Exibição do Último Comentário (se algum visitante comentou) */}
-                {latestComment && (
+                {!photo.isQr && latestComment && (
                   <div className="mt-2 p-2 rounded-xl bg-[#f4ebe0] border border-[#e2d5c3] text-[11px] text-[#5e4130] flex items-start gap-1.5 line-clamp-1">
                     <span className="font-bold text-[#26120c] flex-shrink-0">
                       {latestComment.author}:
@@ -490,10 +547,12 @@ export const VintagePhotoGallery: React.FC = () => {
                 <Trash2 size={24} />
               </div>
               <h3 className="font-serif-vintage font-black text-lg uppercase mb-2">
-                Excluir Foto do Mural?
+                {photoToDelete.isQr ? "Ocultar QR Code do Mural?" : "Excluir Foto do Mural?"}
               </h3>
               <p className="text-xs font-serif-vintage text-[#7c5a45] mb-5 leading-relaxed">
-                Esta foto será removida da galeria e não aparecerá mais para os convidados.
+                {photoToDelete.isQr 
+                  ? "O card do QR Code será removido da galeria (continuará visível na seção do Beckômetro)."
+                  : "Esta foto será removida da galeria e não aparecerá mais para os convidados."}
               </p>
               <div className="flex gap-2">
                 <button
@@ -516,7 +575,7 @@ export const VintagePhotoGallery: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* MODAL LIGHTBOX COM FOTO LIMPA, CURTIR DA MACONHA, BOTÃO EXCLUIR E FORMULÁRIO DE COMENTÁRIO */}
+      {/* MODAL LIGHTBOX COM FOTO LIMPA OU QR CODE */}
       <AnimatePresence>
         {selectedPhoto && (
           <div
@@ -540,129 +599,181 @@ export const VintagePhotoGallery: React.FC = () => {
                 <X size={18} />
               </button>
 
-              <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto md:overflow-visible">
-                {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha e Excluir */}
-                <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#f5ece0] border-b md:border-b-0 md:border-r border-[#dfceb0]">
-                  <div>
-                    <div className="rounded-2xl overflow-hidden border-2 border-[#26120c] bg-black aspect-[4/5] max-h-[50vh] md:max-h-none shadow-md">
-                      <img
-                        src={selectedPhoto.src}
-                        alt="Foto do Igor ampliada"
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
+              {selectedPhoto.isQr ? (
+                /* MODAL ESPECÍFICO DO QR CODE PIX OFICIAL */
+                <div className="p-6 sm:p-8 text-center max-w-md mx-auto">
+                  <span className="text-xs font-serif-vintage font-bold text-[#b45309] uppercase block mb-1">
+                    FORTALECIMENTO DO GLORIOSO 30 ANOS
+                  </span>
+                  <h3 className="font-serif-vintage font-black text-2xl uppercase text-[#26120c] mb-2">
+                    QR Code Oficial Pix
+                  </h3>
+                  <p className="text-xs font-serif-vintage text-[#7c5a45] mb-4">
+                    Aponte a câmera do celular no QR Code abaixo ou copie a chave:
+                  </p>
+
+                  <div className="p-3 rounded-2xl bg-white border-2 border-[#26120c] shadow-lg max-w-[240px] mx-auto mb-4">
+                    <img
+                      src={selectedPhoto.src}
+                      alt="QR Code Oficial Pix do Igor"
+                      className="w-full aspect-square object-contain rounded-xl"
+                    />
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[#dfceb0] flex items-center justify-between gap-2 flex-wrap">
-                    {/* Botão Curtir da Maconha no Modal */}
-                    <button
-                      type="button"
-                      onClick={() => handleLike(selectedPhoto.id)}
-                      className="group py-1.5 px-3.5 rounded-full bg-[#faf5eb] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-2 text-xs font-serif-vintage font-bold text-[#26120c] shadow-xs active:scale-90 transition-all cursor-pointer"
-                    >
-                      <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
-                      <span>Curtir ({likesMap[selectedPhoto.id] || 0})</span>
-                    </button>
+                  <div className="mb-4">
+                    <span className="font-mono text-sm text-[#26120c] block font-bold">
+                      {pixKeyDisplay}
+                    </span>
+                    <span className="text-xs text-[#7c5a45] font-serif-vintage block">
+                      {pixBeneficiary}
+                    </span>
+                  </div>
 
-                    {/* Botão Excluir no Modal */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setPhotoToDelete(selectedPhoto)}
-                      className="py-1.5 px-3 rounded-full bg-[#fae8e8] hover:bg-red-600 text-red-700 hover:text-white border border-red-200 hover:border-red-600 flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-                      title="Excluir foto"
+                      onClick={handleCopyKey}
+                      className="py-2.5 px-4 rounded-xl bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
                     >
-                      <Trash2 size={13} />
-                      <span>Excluir Foto</span>
+                      {copiedKey ? <Check size={14} className="text-[#16a34a]" /> : <Copy size={14} className="text-[#eab308]" />}
+                      <span>{copiedKey ? 'Copiada!' : 'Copiar Chave'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopyPayload}
+                      className="py-2.5 px-4 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
+                    >
+                      {copiedPayload ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copiedPayload ? 'Copiado!' : 'Copia e Cola'}</span>
                     </button>
                   </div>
                 </div>
-
-                {/* Coluna 2: Lista de Comentários & Formulário para Comentar */}
-                <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#faf5eb]">
-                  <div>
-                    {/* Header dos Comentários */}
-                    <div className="flex items-center gap-2 pb-3 border-b border-[#dfceb0] mb-3">
-                      <MessageCircle size={18} className="text-[#16a34a]" />
-                      <h3 className="font-serif-vintage font-bold text-sm text-[#26120c] uppercase">
-                        Recados & Comentários ({getCommentsForPhoto(selectedPhoto.id).length})
-                      </h3>
+              ) : (
+                /* MODAL PADRÃO DAS FOTOS COM COMENTÁRIOS E CURTIR */
+                <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto md:overflow-visible">
+                  {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha e Excluir */}
+                  <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#f5ece0] border-b md:border-b-0 md:border-r border-[#dfceb0]">
+                    <div>
+                      <div className="rounded-2xl overflow-hidden border-2 border-[#26120c] bg-black aspect-[4/5] max-h-[50vh] md:max-h-none shadow-md">
+                        <img
+                          src={selectedPhoto.src}
+                          alt="Foto do Igor ampliada"
+                          className="w-full h-full object-cover object-top"
+                        />
+                      </div>
                     </div>
 
-                    {/* Lista com Rolagem */}
-                    <div className="space-y-2.5 max-h-[30vh] sm:max-h-[36vh] overflow-y-auto pr-1">
-                      {getCommentsForPhoto(selectedPhoto.id).length === 0 ? (
-                        <div className="text-center py-8 px-2">
-                          <CannabisLeafIcon className="w-8 h-8 text-[#caa789] mx-auto mb-2 opacity-50" />
-                          <p className="font-serif-vintage text-xs text-[#7c5a45] italic">
-                            Nenhum recado ainda nesta foto. Seja o primeiro a mandar uma mensagem pro Igor!
-                          </p>
-                        </div>
-                      ) : (
-                        getCommentsForPhoto(selectedPhoto.id).map((comment) => (
-                          <div
-                            key={comment.id}
-                            className="p-3 rounded-2xl bg-white border border-[#ded0b9] shadow-xs text-xs space-y-1"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-serif-vintage font-black text-[#26120c] flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
-                                {comment.author}
-                              </span>
-                              <span className="text-[10px] text-[#8c6d58] font-mono">
-                                {comment.timestamp}
-                              </span>
-                            </div>
-                            <p className="font-serif-vintage text-[#422217] leading-relaxed pl-3.5">
-                              {comment.text}
+                    <div className="mt-4 pt-3 border-t border-[#dfceb0] flex items-center justify-between gap-2 flex-wrap">
+                      {/* Botão Curtir da Maconha no Modal */}
+                      <button
+                        type="button"
+                        onClick={() => handleLike(selectedPhoto.id)}
+                        className="group py-1.5 px-3.5 rounded-full bg-[#faf5eb] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-2 text-xs font-serif-vintage font-bold text-[#26120c] shadow-xs active:scale-90 transition-all cursor-pointer"
+                      >
+                        <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
+                        <span>Curtir ({likesMap[selectedPhoto.id] || 0})</span>
+                      </button>
+
+                      {/* Botão Excluir no Modal */}
+                      <button
+                        type="button"
+                        onClick={() => setPhotoToDelete(selectedPhoto)}
+                        className="py-1.5 px-3 rounded-full bg-[#fae8e8] hover:bg-red-600 text-red-700 hover:text-white border border-red-200 hover:border-red-600 flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                        title="Excluir foto"
+                      >
+                        <Trash2 size={13} />
+                        <span>Excluir Foto</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Coluna 2: Lista de Comentários & Formulário para Comentar */}
+                  <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#faf5eb]">
+                    <div>
+                      {/* Header dos Comentários */}
+                      <div className="flex items-center gap-2 pb-3 border-b border-[#dfceb0] mb-3">
+                        <MessageCircle size={18} className="text-[#16a34a]" />
+                        <h3 className="font-serif-vintage font-bold text-sm text-[#26120c] uppercase">
+                          Recados & Comentários ({getCommentsForPhoto(selectedPhoto.id).length})
+                        </h3>
+                      </div>
+
+                      {/* Lista com Rolagem */}
+                      <div className="space-y-2.5 max-h-[30vh] sm:max-h-[36vh] overflow-y-auto pr-1">
+                        {getCommentsForPhoto(selectedPhoto.id).length === 0 ? (
+                          <div className="text-center py-8 px-2">
+                            <CannabisLeafIcon className="w-8 h-8 text-[#caa789] mx-auto mb-2 opacity-50" />
+                            <p className="font-serif-vintage text-xs text-[#7c5a45] italic">
+                              Nenhum recado ainda nesta foto. Seja o primeiro a mandar uma mensagem pro Igor!
                             </p>
                           </div>
-                        ))
-                      )}
+                        ) : (
+                          getCommentsForPhoto(selectedPhoto.id).map((comment) => (
+                            <div
+                              key={comment.id}
+                              className="p-3 rounded-2xl bg-white border border-[#ded0b9] shadow-xs text-xs space-y-1"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-serif-vintage font-black text-[#26120c] flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
+                                  {comment.author}
+                                </span>
+                                <span className="text-[10px] text-[#8c6d58] font-mono">
+                                  {comment.timestamp}
+                                </span>
+                              </div>
+                              <p className="font-serif-vintage text-[#422217] leading-relaxed pl-3.5">
+                                {comment.text}
+                              </p>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
+
+                    {/* FORMULÁRIO: PEDE NOME E COMENTÁRIO */}
+                    <form onSubmit={handleAddComment} className="mt-4 pt-4 border-t border-[#dfceb0] space-y-2.5">
+                      <span className="text-[11px] font-serif-vintage font-bold uppercase text-[#7c5a45] block">
+                        Deixe seu comentário nessa foto
+                      </span>
+
+                      {/* Campo: Nome ou Apelido */}
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          placeholder="Seu nome ou apelido (ex: Pedrinho)"
+                          value={newAuthor}
+                          onChange={(e) => setNewAuthor(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                        />
+                      </div>
+
+                      {/* Campo: Comentário */}
+                      <div>
+                        <textarea
+                          rows={2}
+                          required
+                          placeholder="Escreva seu recado ou comentário..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a] resize-none"
+                        />
+                      </div>
+
+                      {/* Botão de Enviar */}
+                      <button
+                        type="submit"
+                        className="w-full py-2.5 rounded-xl bg-[#26120c] hover:bg-[#3d1c12] text-[#faf5eb] font-serif-vintage font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Send size={13} className="text-[#eab308]" />
+                        <span>Publicar Comentário</span>
+                        <Sparkles size={13} className="text-[#16a34a]" />
+                      </button>
+                    </form>
                   </div>
-
-                  {/* FORMULÁRIO: PEDE NOME E COMENTÁRIO */}
-                  <form onSubmit={handleAddComment} className="mt-4 pt-4 border-t border-[#dfceb0] space-y-2.5">
-                    <span className="text-[11px] font-serif-vintage font-bold uppercase text-[#7c5a45] block">
-                      Deixe seu comentário nessa foto
-                    </span>
-
-                    {/* Campo: Nome ou Apelido */}
-                    <div className="relative">
-                      <input
-                        type="text"
-                        required
-                        placeholder="Seu nome ou apelido (ex: Pedrinho)"
-                        value={newAuthor}
-                        onChange={(e) => setNewAuthor(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
-                      />
-                    </div>
-
-                    {/* Campo: Comentário */}
-                    <div>
-                      <textarea
-                        rows={2}
-                        required
-                        placeholder="Escreva seu recado ou comentário..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a] resize-none"
-                      />
-                    </div>
-
-                    {/* Botão de Enviar */}
-                    <button
-                      type="submit"
-                      className="w-full py-2.5 rounded-xl bg-[#26120c] hover:bg-[#3d1c12] text-[#faf5eb] font-serif-vintage font-bold text-xs uppercase tracking-wider shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Send size={13} className="text-[#eab308]" />
-                      <span>Publicar Comentário</span>
-                      <Sparkles size={13} className="text-[#16a34a]" />
-                    </button>
-                  </form>
                 </div>
-              </div>
+              )}
             </motion.div>
           </div>
         )}
