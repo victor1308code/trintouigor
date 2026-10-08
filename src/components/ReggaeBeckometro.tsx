@@ -25,14 +25,18 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
   onAddDonation,
   onPuff,
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedPayload, setCopiedPayload] = useState(false);
   const [customAmount, setCustomAmount] = useState('');
   const [donorName, setDonorName] = useState('');
   const [donorMessage, setDonorMessage] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [isPuffing, setIsPuffing] = useState(false);
 
-  const pixKey = '30.igor.glorioso@pix';
+  const pixKeyPhone = '61982228996';
+  const pixKeyDisplay = '(61) 98222-8996';
+  const pixBeneficiary = 'Igor Henrique Anjos Marques';
+  const pixCopiaCola = '00020126770014br.gov.bcb.pix0114+5561982228996023730tou_do_Igor_Nicolau_(casa_e_comida)5204000053039865802BR5925IGOR_HENRIQUE_ANJOS_MARQU6008BRASILIA62290525dHiNyE5D1npOPQCJHtctq0t786304639D';
 
   // Cálculo da queima do beck conforme as contribuições entram
   // Inicia em 0% quando não há contribuições
@@ -40,10 +44,16 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
     ? 0 
     : Math.min(95, Math.max(8, Math.round((totalAmount / 1500) * 80) + 10));
 
-  const handleCopyPix = () => {
-    navigator.clipboard.writeText(pixKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  const handleCopyKey = () => {
+    navigator.clipboard.writeText(pixKeyPhone);
+    setCopiedKey(true);
+    setTimeout(() => setCopiedKey(false), 2500);
+  };
+
+  const handleCopyPayload = () => {
+    navigator.clipboard.writeText(pixCopiaCola);
+    setCopiedPayload(true);
+    setTimeout(() => setCopiedPayload(false), 2500);
   };
 
   // Disparo comemorativo de confetes com formato vetorial da FOLHA DE MACONHA
@@ -218,67 +228,58 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
         <div className="pt-5 border-t border-[#e5decb]">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
             
-            {/* Lado Esquerdo: QR Code e Chave Pix */}
+            {/* Lado Esquerdo: QR Code Oficial e Chave Pix */}
             <div className="sm:col-span-6 flex flex-col items-center text-center p-4 rounded-2xl bg-[#f5ede0] border border-[#e5d8c3]">
               <span className="text-xs font-serif-vintage font-bold text-[#26120c] uppercase block mb-1">
-                CHAVE PIX DO ANIVERSARIANTE
+                QR CODE OFICIAL PIX DO IGOR
               </span>
 
-              {/* QR Code com Borda Rasta */}
-              <div className="p-2.5 rounded-2xl bg-white border-2 border-[#26120c] shadow-md my-2 relative">
-                <svg viewBox="0 0 140 140" className="w-32 h-32 mx-auto" fill="#26120c">
-                  <rect x="5" y="5" width="35" height="35" fill="#26120c" />
-                  <rect x="11" y="11" width="23" height="23" fill="#fff" />
-                  <rect x="16" y="16" width="13" height="13" fill="#26120c" />
-
-                  <rect x="100" y="5" width="35" height="35" fill="#26120c" />
-                  <rect x="106" y="11" width="23" height="23" fill="#fff" />
-                  <rect x="111" y="16" width="13" height="13" fill="#26120c" />
-
-                  <rect x="5" y="100" width="35" height="35" fill="#26120c" />
-                  <rect x="11" y="106" width="23" height="23" fill="#fff" />
-                  <rect x="16" y="111" width="13" height="13" fill="#26120c" />
-
-                  <rect x="50" y="10" width="10" height="10" />
-                  <rect x="70" y="10" width="20" height="10" />
-                  <rect x="50" y="30" width="15" height="15" />
-                  <rect x="75" y="30" width="15" height="15" />
-
-                  <rect x="10" y="50" width="20" height="10" />
-                  <rect x="35" y="55" width="15" height="20" />
-                  <rect x="10" y="75" width="25" height="10" />
-
-                  <rect x="100" y="50" width="25" height="15" />
-                  <rect x="105" y="75" width="20" height="15" />
-
-                  <rect x="50" y="100" width="20" height="15" />
-                  <rect x="75" y="100" width="15" height="20" />
-                  <rect x="95" y="105" width="20" height="15" />
-                </svg>
-
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-[#eab308] border-2 border-[#26120c] flex items-center justify-center text-xs shadow-md">
-                    <CannabisLeafIcon className="w-5 h-5 text-[#26120c]" />
-                  </div>
-                </div>
+              {/* QR Code Oficial em Alta Qualidade */}
+              <div className="p-2 rounded-2xl bg-white border-2 border-[#26120c] shadow-md my-2 relative max-w-[180px] w-full">
+                <img
+                  src="/pix-qrcode-oficial.jpg"
+                  alt="QR Code Oficial Pix do Igor"
+                  className="w-full aspect-square object-contain rounded-xl mx-auto shadow-inner"
+                />
               </div>
 
-              <div className="w-full mt-1">
-                <span className="font-mono text-xs text-[#593d31] block mb-2 font-bold">
-                  {pixKey}
-                </span>
+              <div className="w-full mt-1 space-y-2">
+                <div>
+                  <span className="font-mono text-xs text-[#26120c] block font-bold">
+                    {pixKeyDisplay}
+                  </span>
+                  <span className="text-[10px] text-[#7c5a45] font-serif-vintage block">
+                    {pixBeneficiary}
+                  </span>
+                </div>
 
-                <button
-                  onClick={handleCopyPix}
-                  className={`w-full py-2.5 px-3 rounded-xl text-xs font-serif-vintage font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer ${
-                    copied
-                      ? 'bg-[#16a34a] text-white'
-                      : 'bg-[#26120c] hover:bg-[#402015] text-[#faf5eb]'
-                  }`}
-                >
-                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                  <span>{copied ? 'Chave Copiada!' : 'Copiar Chave Pix'}</span>
-                </button>
+                <div className="grid grid-cols-1 gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleCopyKey}
+                    className={`w-full py-2 px-3 rounded-xl text-xs font-serif-vintage font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer ${
+                      copiedKey
+                        ? 'bg-[#16a34a] text-white'
+                        : 'bg-[#26120c] hover:bg-[#402015] text-[#faf5eb]'
+                    }`}
+                  >
+                    {copiedKey ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{copiedKey ? 'Chave Copiada!' : 'Copiar Chave (Telefone)'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyPayload}
+                    className={`w-full py-2 px-3 rounded-xl text-[11px] font-serif-vintage font-bold flex items-center justify-center gap-1.5 transition-all border border-[#c4b59f] cursor-pointer ${
+                      copiedPayload
+                        ? 'bg-[#16a34a] text-white border-[#16a34a]'
+                        : 'bg-[#ece0cc] hover:bg-[#dfd0b9] text-[#26120c]'
+                    }`}
+                  >
+                    {copiedPayload ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{copiedPayload ? 'Código Copiado!' : 'Copiar Pix Copia e Cola'}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -330,7 +331,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
               </div>
 
               <p className="text-xs font-serif-vintage text-[#7c5a45] mb-4">
-                Envie seu Pix de qualquer quantia para a chave <strong className="text-[#26120c] font-mono">{pixKey}</strong> e registre aqui para queimar o beck!
+                Envie seu Pix de qualquer quantia para a chave <strong className="text-[#26120c] font-mono">{pixKeyDisplay}</strong> ({pixBeneficiary}) e registre aqui para queimar o beck!
               </p>
 
               <form onSubmit={handleConfirmDonation} className="space-y-3">

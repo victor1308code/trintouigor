@@ -27,6 +27,11 @@ db.exec(`
     photo_id TEXT PRIMARY KEY,
     count INTEGER NOT NULL DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS deleted_photos (
+    photo_id TEXT PRIMARY KEY,
+    deleted_at TEXT NOT NULL
+  );
 `);
 
 function sendJson(res, statusCode, data) {
@@ -141,6 +146,36 @@ const server = http.createServer(async (req, res) => {
       const row = getStmt.get(String(photoId));
 
       return sendJson(res, 200, { photoId: String(photoId), count: row?.count || 1 });
+    }
+
+    // GET /api/deleted-photos
+    if (pathname === '/api/deleted-photos' && req.method === 'GET') {
+      const stmt = db.prepare('SELECT photo_id as photoId FROM deleted_photos');
+      const rows = stmt.all();
+      return sendJson(res, 200, rows.map(r => String(r.photoId)));
+    }
+
+    // POST /api/deleted-photos
+    if (pathname === '/api/deleted-photos' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const { photoId } = body;
+      if (!photoId) {
+        return sendJson(res, 400, { error: 'photoId é obrigatório' });
+      }
+      const stmt = db.prepare(`
+        INSERT INTO deleted_photos (photo_id, deleted_at)
+        VALUES (?, ?)
+        ON CONFLICT(photo_id) DO UPDATE SET deleted_at = ?
+      `);
+      const now = new Date().toISOString();
+      stmt.run(String(photoId), now, now);
+      return sendJson(res, 200, { success: true, photoId: String(photoId) });
+    }
+
+    // POST /api/deleted-photos/restore-all
+    if (pathname === '/api/deleted-photos/restore-all' && req.method === 'POST') {
+      db.exec('DELETE FROM deleted_photos');
+      return sendJson(res, 200, { success: true });
     }
 
     return sendJson(res, 404, { error: 'Not found' });

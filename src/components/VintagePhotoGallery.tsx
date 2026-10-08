@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, Send, X, Sparkles } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, Trash2, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 
@@ -35,10 +35,44 @@ function formatCommentTime(dateStr?: string) {
   }
 }
 
+// Rotações sutis de estilo Polaroid Vintage
+const ALL_ROTATIONS = [
+  'rotate-[-1.5deg]',
+  'rotate-[2deg]',
+  'rotate-[-2deg]',
+  'rotate-[1.5deg]',
+  'rotate-[-1deg]',
+  'rotate-[2.5deg]',
+  'rotate-[-2.5deg]',
+  'rotate-[1deg]',
+];
+
+// Todas as 39 Fotos da Festa e do Igor
+const allPhotos: IgorPhoto[] = Array.from({ length: 39 }, (_, i) => {
+  const num = i + 1;
+  return {
+    id: String(num),
+    src: `/photos/igor-${num}.jpg`,
+    rotation: ALL_ROTATIONS[i % ALL_ROTATIONS.length],
+  };
+});
+
 export const VintagePhotoGallery: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<IgorPhoto | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<IgorPhoto | null>(null);
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
+
+  // Fotos excluídas da galeria (persistidas localmente e sincronizadas)
+  const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('trintou_igor_deleted_photos_v1');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // ignore
+    }
+    return [];
+  });
 
   // Curtidas da maconha (inicia em 0 para todas as fotos)
   const [likesMap, setLikesMap] = useState<Record<string, number>>(() => {
@@ -48,17 +82,14 @@ export const VintagePhotoGallery: React.FC = () => {
     } catch {
       // ignore
     }
-    return {
-      '4': 0,
-      '2': 0,
-      '1': 0,
-      '5': 0,
-      '7': 0,
-      '6': 0,
-    };
+    const initial: Record<string, number> = {};
+    for (let i = 1; i <= 39; i++) {
+      initial[String(i)] = 0;
+    }
+    return initial;
   });
 
-  // Comentários dos visitantes (inicia totalmente zerado, sem comentários padrões)
+  // Comentários dos visitantes
   const [comments, setComments] = useState<PhotoComment[]>(() => {
     try {
       localStorage.removeItem('trintou_igor_photo_comments_v2');
@@ -74,9 +105,10 @@ export const VintagePhotoGallery: React.FC = () => {
   // Sincronização central ao vivo (polling a cada 3.5 segundos)
   const fetchLiveData = async () => {
     try {
-      const [resComments, resLikes] = await Promise.all([
-        fetch('/api/comments').then((r) => (r.ok ? r.json() : null)),
-        fetch('/api/likes').then((r) => (r.ok ? r.json() : null)),
+      const [resComments, resLikes, resDeleted] = await Promise.all([
+        fetch('/api/comments').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch('/api/likes').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch('/api/deleted-photos').then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
 
       if (Array.isArray(resComments)) {
@@ -106,6 +138,18 @@ export const VintagePhotoGallery: React.FC = () => {
           return updated;
         });
       }
+
+      if (Array.isArray(resDeleted)) {
+        setDeletedPhotoIds((prev) => {
+          const merged = Array.from(new Set([...prev, ...resDeleted.map(String)]));
+          try {
+            localStorage.setItem('trintou_igor_deleted_photos_v1', JSON.stringify(merged));
+          } catch {
+            // ignore
+          }
+          return merged;
+        });
+      }
     } catch {
       // Continua com estado local se offline
     }
@@ -117,41 +161,10 @@ export const VintagePhotoGallery: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Lista de Fotos do Igor sem nenhuma legenda
-  const photos: IgorPhoto[] = [
-    {
-      id: '4',
-      src: '/photos/igor-4.jpg',
-      rotation: 'rotate-[-1.5deg]',
-    },
-    {
-      id: '2',
-      src: '/photos/igor-2.jpg',
-      rotation: 'rotate-[2deg]',
-    },
-    {
-      id: '1',
-      src: '/photos/igor-1.jpg',
-      rotation: 'rotate-[-2deg]',
-    },
-    {
-      id: '5',
-      src: '/photos/igor-5.jpg',
-      rotation: 'rotate-[1.5deg]',
-    },
-    {
-      id: '7',
-      src: '/photos/igor-7.jpg',
-      rotation: 'rotate-[-1deg]',
-    },
-    {
-      id: '6',
-      src: '/photos/igor-6.jpg',
-      rotation: 'rotate-[2.5deg]',
-    },
-  ];
+  // Fotos visíveis (excluindo as que foram removidas pelo botão de exclusão)
+  const visiblePhotos = allPhotos.filter((p) => !deletedPhotoIds.includes(p.id));
 
-  // Ação de Curtir com a Folha de Maconha (inicia em 0)
+  // Ação de Curtir com a Folha de Maconha
   const handleLike = async (photoId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
 
@@ -268,28 +281,68 @@ export const VintagePhotoGallery: React.FC = () => {
     }
   };
 
+  // Excluir foto
+  const handleConfirmDelete = async () => {
+    if (!photoToDelete) return;
+    const idToDelete = photoToDelete.id;
+
+    setDeletedPhotoIds((prev) => {
+      const updated = Array.from(new Set([...prev, idToDelete]));
+      try {
+        localStorage.setItem('trintou_igor_deleted_photos_v1', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+
+    if (selectedPhoto?.id === idToDelete) {
+      setSelectedPhoto(null);
+    }
+    setPhotoToDelete(null);
+
+    try {
+      await fetch('/api/deleted-photos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId: idToDelete }),
+      });
+    } catch {
+      // ignore
+    }
+  };
+
+  // Restaurar todas as fotos excluídas
+  const handleRestoreAllPhotos = async () => {
+    setDeletedPhotoIds([]);
+    try {
+      localStorage.removeItem('trintou_igor_deleted_photos_v1');
+      await fetch('/api/deleted-photos/restore-all', { method: 'POST' });
+    } catch {
+      // ignore
+    }
+  };
+
   // Fotos ordenadas da mais curtida para a menos curtida (baseado no número de maconhas / curtidas)
-  const sortedPhotos = [...photos].sort((a, b) => {
+  const sortedPhotos = [...visiblePhotos].sort((a, b) => {
     const likesA = likesMap[a.id] || 0;
     const likesB = likesMap[b.id] || 0;
     if (likesB !== likesA) {
       return likesB - likesA;
     }
-    return photos.indexOf(a) - photos.indexOf(b);
+    return Number(a.id) - Number(b.id);
   });
 
   const getCommentsForPhoto = (photoId: string) => {
     return comments.filter((c) => c.photoId === photoId);
   };
 
-  const selectedPhotoComments = selectedPhoto ? getCommentsForPhoto(selectedPhoto.id) : [];
-
   return (
     <section id="galeria" className="relative py-12 px-4 max-w-6xl mx-auto">
       {/* Título da Galeria / Mural */}
       <div className="text-center mb-10">
         <span className="text-xs font-serif-vintage tracking-widest text-[#e8c89b] uppercase block mb-1">
-          O MURAL DO GLORIOSO
+          O MURAL DO GLORIOSO ({visiblePhotos.length} FOTOS)
         </span>
         <h2 className="text-3xl sm:text-4xl font-serif-vintage font-bold text-[#faf3e3] uppercase tracking-tight">
           Momentos & Registros do Igor
@@ -314,16 +367,29 @@ export const VintagePhotoGallery: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.03, rotate: 0 }}
+              whileHover={{ scale: 1.025, rotate: 0 }}
               transition={{
                 layout: { duration: 0.45, ease: 'easeInOut' },
               }}
               onClick={() => setSelectedPhoto(photo)}
               className={`p-3 pb-4 rounded-2xl bg-[#faf5eb] border border-[#e5decb] shadow-xl hover:shadow-2xl transition-all cursor-pointer relative flex flex-col justify-between ${photo.rotation}`}
             >
+              {/* Botão de Excluir Foto na Polaroid */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPhotoToDelete(photo);
+                }}
+                className="absolute top-3 left-3 z-20 w-7 h-7 rounded-full bg-white/90 hover:bg-red-600 text-[#8c6d58] hover:text-white flex items-center justify-center transition-all shadow-md border border-[#dfceb0] hover:border-red-600 cursor-pointer active:scale-90"
+                title="Excluir esta foto"
+              >
+                <Trash2 size={13} />
+              </button>
+
               {/* Selo #1 Mais Chapada quando houver curtidas */}
               {isTop1 && (
-                <div className="absolute top-4 right-4 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
+                <div className="absolute top-3 right-3 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
                   <CannabisLeafIcon className="w-3 h-3 text-[#fde047]" />
                   <span>#1 Mais Chapada</span>
                 </div>
@@ -338,6 +404,7 @@ export const VintagePhotoGallery: React.FC = () => {
                   <img
                     src={photo.src}
                     alt="Foto do Igor"
+                    loading="lazy"
                     className="w-full h-full object-cover object-top filter contrast-[1.05] hover:scale-105 transition-transform duration-500"
                   />
                 </div>
@@ -346,8 +413,9 @@ export const VintagePhotoGallery: React.FC = () => {
               {/* Área de Ações: Curtir da Maconha + Botão Comentar */}
               <div className="mt-3.5 pt-2.5 border-t border-[#e8ded0] px-1">
                 <div className="flex items-center justify-between gap-2">
-                  {/* BOTÃO DE CURTIR DA MACONHA (INICIA EM 0) */}
+                  {/* BOTÃO DE CURTIR DA MACONHA */}
                   <button
+                    type="button"
                     onClick={(e) => handleLike(photo.id, e)}
                     className="group py-1.5 px-3 rounded-full bg-[#f2e7d5] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-1.5 text-xs font-serif-vintage font-bold text-[#26120c] transition-all shadow-xs active:scale-90 cursor-pointer"
                     title="Dar uma curtida de maconha nessa foto"
@@ -358,6 +426,7 @@ export const VintagePhotoGallery: React.FC = () => {
 
                   {/* BOTÃO COMENTAR */}
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedPhoto(photo);
@@ -389,7 +458,65 @@ export const VintagePhotoGallery: React.FC = () => {
         })}
       </div>
 
-      {/* MODAL LIGHTBOX COM FOTO LIMPA, CURTIR DA MACONHA E FORMULÁRIO DE COMENTÁRIO */}
+      {/* Botão de Restaurar Fotos Excluídas (se houver alguma) */}
+      {deletedPhotoIds.length > 0 && (
+        <div className="mt-10 text-center">
+          <button
+            type="button"
+            onClick={handleRestoreAllPhotos}
+            className="inline-flex items-center gap-2 py-2 px-4 rounded-full bg-[#f2e7d5]/90 hover:bg-[#e6d7be] border border-[#dfceb0] text-xs font-serif-vintage text-[#5e4130] transition-all cursor-pointer shadow-sm active:scale-95"
+          >
+            <RotateCcw size={13} className="text-[#16a34a]" />
+            <span>Restaurar {deletedPhotoIds.length} foto{deletedPhotoIds.length > 1 ? 's' : ''} excluída{deletedPhotoIds.length > 1 ? 's' : ''}</span>
+          </button>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DE FOTO */}
+      <AnimatePresence>
+        {photoToDelete && (
+          <div
+            onClick={() => setPhotoToDelete(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-sm w-full rounded-3xl bg-[#faf5eb] border-2 border-[#dfceb0] p-6 shadow-2xl text-[#26120c] text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center mb-3">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="font-serif-vintage font-black text-lg uppercase mb-2">
+                Excluir Foto do Mural?
+              </h3>
+              <p className="text-xs font-serif-vintage text-[#7c5a45] mb-5 leading-relaxed">
+                Esta foto será removida da galeria e não aparecerá mais para os convidados.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPhotoToDelete(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-[#c4b59f] text-xs font-serif-vintage font-bold text-[#26120c] hover:bg-[#ece0cc] transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-serif-vintage font-bold shadow-md transition-all cursor-pointer active:scale-95"
+                >
+                  Sim, Excluir
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL LIGHTBOX COM FOTO LIMPA, CURTIR DA MACONHA, BOTÃO EXCLUIR E FORMULÁRIO DE COMENTÁRIO */}
       <AnimatePresence>
         {selectedPhoto && (
           <div
@@ -405,6 +532,7 @@ export const VintagePhotoGallery: React.FC = () => {
             >
               {/* Botão Fechar */}
               <button
+                type="button"
                 onClick={() => setSelectedPhoto(null)}
                 className="absolute top-4 right-4 z-20 p-2 rounded-full bg-[#f2e7d5] hover:bg-[#e6d7be] text-[#26120c] transition-all cursor-pointer shadow-sm"
                 title="Fechar"
@@ -413,7 +541,7 @@ export const VintagePhotoGallery: React.FC = () => {
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto md:overflow-visible">
-                {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha */}
+                {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha e Excluir */}
                 <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#f5ece0] border-b md:border-b-0 md:border-r border-[#dfceb0]">
                   <div>
                     <div className="rounded-2xl overflow-hidden border-2 border-[#26120c] bg-black aspect-[4/5] max-h-[50vh] md:max-h-none shadow-md">
@@ -425,9 +553,10 @@ export const VintagePhotoGallery: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[#dfceb0] flex items-center justify-between gap-2">
+                  <div className="mt-4 pt-3 border-t border-[#dfceb0] flex items-center justify-between gap-2 flex-wrap">
                     {/* Botão Curtir da Maconha no Modal */}
                     <button
+                      type="button"
                       onClick={() => handleLike(selectedPhoto.id)}
                       className="group py-1.5 px-3.5 rounded-full bg-[#faf5eb] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-2 text-xs font-serif-vintage font-bold text-[#26120c] shadow-xs active:scale-90 transition-all cursor-pointer"
                     >
@@ -435,10 +564,16 @@ export const VintagePhotoGallery: React.FC = () => {
                       <span>Curtir ({likesMap[selectedPhoto.id] || 0})</span>
                     </button>
 
-                    <div className="flex items-center gap-1.5 text-xs font-serif-vintage text-[#8c6d58]">
-                      <CannabisLeafIcon className="w-3.5 h-3.5 text-[#16a34a]" />
-                      <span>Mural do Glorioso</span>
-                    </div>
+                    {/* Botão Excluir no Modal */}
+                    <button
+                      type="button"
+                      onClick={() => setPhotoToDelete(selectedPhoto)}
+                      className="py-1.5 px-3 rounded-full bg-[#fae8e8] hover:bg-red-600 text-red-700 hover:text-white border border-red-200 hover:border-red-600 flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                      title="Excluir foto"
+                    >
+                      <Trash2 size={13} />
+                      <span>Excluir Foto</span>
+                    </button>
                   </div>
                 </div>
 
@@ -448,36 +583,36 @@ export const VintagePhotoGallery: React.FC = () => {
                     {/* Header dos Comentários */}
                     <div className="flex items-center gap-2 pb-3 border-b border-[#dfceb0] mb-3">
                       <MessageCircle size={18} className="text-[#16a34a]" />
-                      <h4 className="font-serif-vintage font-black text-base uppercase text-[#26120c]">
-                        Comentários ({selectedPhotoComments.length})
-                      </h4>
+                      <h3 className="font-serif-vintage font-bold text-sm text-[#26120c] uppercase">
+                        Recados & Comentários ({getCommentsForPhoto(selectedPhoto.id).length})
+                      </h3>
                     </div>
 
-                    {/* Lista com Scroll de Comentários */}
-                    <div className="space-y-2.5 max-h-[220px] sm:max-h-[260px] overflow-y-auto pr-1">
-                      {selectedPhotoComments.length === 0 ? (
-                        <div className="text-center py-8 text-[#8c6d58] font-serif-vintage text-xs italic">
-                          Nenhum comentário nessa foto ainda.<br />
-                          Seja o primeiro a deixar um recado pro Igor!
+                    {/* Lista com Rolagem */}
+                    <div className="space-y-2.5 max-h-[30vh] sm:max-h-[36vh] overflow-y-auto pr-1">
+                      {getCommentsForPhoto(selectedPhoto.id).length === 0 ? (
+                        <div className="text-center py-8 px-2">
+                          <CannabisLeafIcon className="w-8 h-8 text-[#caa789] mx-auto mb-2 opacity-50" />
+                          <p className="font-serif-vintage text-xs text-[#7c5a45] italic">
+                            Nenhum recado ainda nesta foto. Seja o primeiro a mandar uma mensagem pro Igor!
+                          </p>
                         </div>
                       ) : (
-                        selectedPhotoComments.map((comment) => (
+                        getCommentsForPhoto(selectedPhoto.id).map((comment) => (
                           <div
                             key={comment.id}
-                            className="p-3 rounded-2xl bg-[#f5ede0] border border-[#e5decb] shadow-xs text-xs"
+                            className="p-3 rounded-2xl bg-white border border-[#ded0b9] shadow-xs text-xs space-y-1"
                           >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-serif-vintage font-bold text-[#26120c] flex items-center gap-1.5">
-                                <span className="w-5 h-5 rounded-full bg-[#eab308] text-[#26120c] flex items-center justify-center text-[10px] font-sans font-black">
-                                  {comment.author.charAt(0).toUpperCase()}
-                                </span>
+                            <div className="flex items-center justify-between">
+                              <span className="font-serif-vintage font-black text-[#26120c] flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-[#16a34a]" />
                                 {comment.author}
                               </span>
-                              <span className="text-[10px] font-serif-vintage text-[#8c6d58]">
+                              <span className="text-[10px] text-[#8c6d58] font-mono">
                                 {comment.timestamp}
                               </span>
                             </div>
-                            <p className="font-serif-vintage text-[#422217] leading-relaxed pl-6">
+                            <p className="font-serif-vintage text-[#422217] leading-relaxed pl-3.5">
                               {comment.text}
                             </p>
                           </div>
