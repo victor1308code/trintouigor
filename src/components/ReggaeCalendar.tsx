@@ -4,6 +4,21 @@ import { Clock, Check, Calendar as CalendarIcon, Flame } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 
+const PARTY_YEAR = 2026;
+const OCTOBER = 9; // getMonth() é 0-based
+const DAYS_IN_OCTOBER = 31;
+
+// Dia de hoje dentro de Outubro/2026, pela data do aparelho:
+// 0 antes de outubro (nenhum dia passou), 32 depois de outubro (todos passaram)
+const getCurrentDayOfMonth = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  if (year < PARTY_YEAR || (year === PARTY_YEAR && month < OCTOBER)) return 0;
+  if (year > PARTY_YEAR || month > OCTOBER) return DAYS_IN_OCTOBER + 1;
+  return now.getDate();
+};
+
 export const ReggaeCalendar: React.FC = () => {
   const targetDate = new Date('2026-10-24T20:00:00').getTime();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -11,12 +26,13 @@ export const ReggaeCalendar: React.FC = () => {
   const [rsvpDone, setRsvpDone] = useState(false);
   const [selectedDayInfo, setSelectedDayInfo] = useState<string | null>(null);
 
-  // Data atual da resenha (Outubro 2026 - Hoje é dia 7)
-  const currentDayOfMonth = 7;
+  // Dia atual da resenha, atualizado junto com a contagem (vira sozinho à meia-noite)
+  const [currentDayOfMonth, setCurrentDayOfMonth] = useState(getCurrentDayOfMonth);
   const targetPartyDay = 24;
 
   useEffect(() => {
     const updateCountdown = () => {
+      setCurrentDayOfMonth(getCurrentDayOfMonth());
       const now = new Date().getTime();
       const distance = targetDate - now;
       if (distance < 0) {
@@ -70,7 +86,7 @@ export const ReggaeCalendar: React.FC = () => {
 
   // Outubro 2026 começa numa Quinta-feira (índice 4: DOM=0, SEG=1, TER=2, QUA=3, QUI=4)
   const firstDayWeekIndex = 4;
-  const daysInOctober = 31;
+  const daysInOctober = DAYS_IN_OCTOBER;
 
   // Células do calendário (vazias antes do dia 1 + dias 1 a 31)
   const calendarCells = [];
@@ -85,7 +101,7 @@ export const ReggaeCalendar: React.FC = () => {
     if (day < currentDayOfMonth) {
       setSelectedDayInfo(`Dia ${day}/10 já foi queimado! Menos um dia até o Trintou do Igor! 🌿`);
     } else if (day === currentDayOfMonth) {
-      setSelectedDayInfo(`Hoje é dia 7 de Outubro! Brasa acesa e contagem a mil! 🔥`);
+      setSelectedDayInfo(`Hoje é dia ${day} de Outubro! Brasa acesa e contagem a mil! 🔥`);
     } else if (day === targetPartyDay) {
       setSelectedDayInfo(`⭐️ 24 DE OUTUBRO: O GRANDE DIA! Festa Oficial de 30 Anos do Igor!`);
       confetti({
@@ -210,7 +226,7 @@ export const ReggaeCalendar: React.FC = () => {
                 );
               }
 
-              // Hoje (Dia 7): Fumaça e Brasa viva
+              // Hoje: Fumaça e Brasa viva
               if (isToday) {
                 return (
                   <motion.button
@@ -218,7 +234,7 @@ export const ReggaeCalendar: React.FC = () => {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleDayClick(day)}
-                    title="Hoje! Dia 7 de Outubro"
+                    title={`Hoje! Dia ${day} de Outubro`}
                     className="aspect-square rounded-xl bg-[#fef3c7] border-2 border-[#f59e0b] shadow-md flex flex-col items-center justify-center p-1 group cursor-pointer relative overflow-hidden animate-pulse"
                   >
                     <CannabisLeafIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#d97706] group-hover:scale-110 transition-transform" />
@@ -264,7 +280,7 @@ export const ReggaeCalendar: React.FC = () => {
         <div className="flex items-center justify-center text-xs font-serif-vintage font-bold text-[#16a34a] px-1 py-1">
           <span className="flex items-center gap-1.5 bg-[#e8f5e9] px-3.5 py-1.5 rounded-full border border-[#a5d6a7] shadow-2xs">
             <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
-            <span>Dias Fumados: {currentDayOfMonth}</span>
+            <span>Dias Fumados: {Math.min(currentDayOfMonth, DAYS_IN_OCTOBER)}</span>
           </span>
         </div>
 
