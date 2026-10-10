@@ -226,6 +226,19 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
 
         {/* ÁREA DO PIX: QR CODE + CHAVE + REGISTRAR CONTRIBUIÇÃO */}
         <div className="pt-5 border-t border-[#e5decb]">
+          {/* Destino do Pix: aluguel da casa da festa */}
+          <div className="mb-5 flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-[#16a34a]/10 border border-[#16a34a]/30 text-left">
+            <span className="text-2xl sm:text-3xl shrink-0" aria-hidden="true">🏡</span>
+            <div>
+              <span className="block text-xs sm:text-sm font-serif-vintage font-black uppercase tracking-wide text-[#15803d]">
+                O Pix é pra ajudar no aluguel da casa
+              </span>
+              <span className="block text-[11px] sm:text-xs font-serif-vintage text-[#593d31] leading-snug mt-0.5">
+                Toda contribuição vai pro aluguel da casa onde vai rolar a festa. Qualquer valor ajuda!
+              </span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
             
             {/* Lado Esquerdo: QR Code Oficial e Chave Pix */}
@@ -290,7 +303,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                   Fortalecimento Livre
                 </span>
                 <p className="text-xs font-serif-vintage text-[#7c5a45] leading-relaxed">
-                  Não há valor mínimo nem meta estipulada. Cada contribuição acende a brasa e fortalece a celebração dos 30 anos do Glorioso!
+                  Não há valor mínimo nem meta estipulada. Cada contribuição ajuda no aluguel da casa, acende a brasa e fortalece a celebração dos 30 anos do Glorioso!
                 </p>
               </div>
 
@@ -331,7 +344,7 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
               </div>
 
               <p className="text-xs font-serif-vintage text-[#7c5a45] mb-4">
-                Envie seu Pix de qualquer quantia para a chave <strong className="text-[#26120c] font-mono">{pixKeyDisplay}</strong> ({pixBeneficiary}) e registre aqui para queimar o beck!
+                Envie seu Pix de qualquer quantia para a chave <strong className="text-[#26120c] font-mono">{pixKeyDisplay}</strong> ({pixBeneficiary}) e registre aqui para queimar o beck! O valor vai pro aluguel da casa da festa.
               </p>
 
               <form onSubmit={handleConfirmDonation} className="space-y-3">

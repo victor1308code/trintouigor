@@ -1,13 +1,17 @@
 import React from 'react';
 import { MapPin, Navigation } from 'lucide-react';
 
+// Casa da festa (Alexânia, GO)
+const PARTY_LAT = -16.19693;
+const PARTY_LNG = -48.456772;
+
 export const ReggaeLocation: React.FC = () => {
   const openMaps = () => {
-    window.open('https://maps.google.com/?q=Iceberg+Bar+Nucleo+Bandeirante+DF', '_blank');
+    window.open(`https://maps.google.com/?q=${PARTY_LAT},${PARTY_LNG}`, '_blank');
   };
 
   const openWaze = () => {
-    window.open('https://waze.com/ul?q=Iceberg+Bar+Nucleo+Bandeirante+DF', '_blank');
+    window.open(`https://waze.com/ul?ll=${PARTY_LAT},${PARTY_LNG}&navigate=yes`, '_blank');
   };
 
   return (
@@ -23,12 +27,23 @@ export const ReggaeLocation: React.FC = () => {
         </h3>
 
         <p className="text-base sm:text-lg font-serif-vintage font-bold text-[#b45309] mt-2 mb-1">
-          Iceberg Bar • Núcleo Bandeirante, DF
+          Casa da Festa • Alexânia, GO
         </p>
 
-        <span className="inline-block text-xs font-serif-vintage text-[#7c5a45] italic mb-6">
-          (Localização provisória • Placeholder)
+        <span className="inline-block text-xs font-serif-vintage text-[#7c5a45] italic mb-5">
+          Use os botões abaixo pra traçar a rota até a casa
         </span>
+
+        {/* Mapa com o pino da casa */}
+        <div className="mb-6 overflow-hidden rounded-2xl border-2 border-[#e5d8c3] shadow-inner bg-[#f5ede0]">
+          <iframe
+            title="Mapa da casa da festa em Alexânia, GO"
+            src={`https://maps.google.com/maps?q=${PARTY_LAT},${PARTY_LNG}&z=15&output=embed`}
+            className="block w-full h-56 sm:h-72 border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
