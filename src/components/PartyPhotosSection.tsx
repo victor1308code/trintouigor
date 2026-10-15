@@ -80,7 +80,7 @@ export const PartyPhotosSection: React.FC<PartyPhotosSectionProps> = ({ onBackTo
       {/* Fita de Papel Antigo Vintage no topo */}
       <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-48 h-7 bg-[#f0e3cc] border border-[#dfceb0] shadow-sm transform -rotate-1 z-20 pointer-events-none flex items-center justify-center">
         <span className="text-[10px] font-black uppercase font-serif-vintage tracking-widest text-[#78350f]">
-          ABA EXTRA • FOTOS DA FESTA
+          FOTOS DA FESTA
         </span>
       </div>
 

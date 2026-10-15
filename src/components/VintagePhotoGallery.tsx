@@ -69,7 +69,7 @@ export const VintagePhotoGallery: React.FC = () => {
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
 
-  // Aba selecionada: 'mural' (fotos do Igor) ou 'festa' (aba extra fotos da festa)
+  // Aba selecionada: 'mural' (fotos do Igor) ou 'festa' (fotos da festa)
   const [activeTab, setActiveTab] = useState<'mural' | 'festa'>('mural');
 
   // Detecta se a URL apontou direto para #fotos-da-festa
@@ -320,7 +320,7 @@ export const VintagePhotoGallery: React.FC = () => {
             setActiveTab('festa');
             window.history.replaceState(null, '', '#fotos-da-festa');
           }}
-          className={`py-2.5 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-serif-vintage font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 relative ${
+          className={`py-2.5 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-serif-vintage font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 ${
             activeTab === 'festa'
               ? 'bg-[#26120c] text-[#faf5eb] border-2 border-[#e8c89b] shadow-xl'
               : 'bg-[#faf5eb]/80 hover:bg-[#faf5eb] text-[#26120c] border border-[#dfceb0]'
@@ -328,9 +328,6 @@ export const VintagePhotoGallery: React.FC = () => {
         >
           <Lock className="w-3.5 h-3.5 text-[#dc2626]" />
           <span>Fotos da Festa</span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#dc2626]/15 text-[#dc2626] font-bold uppercase border border-[#dc2626]/20">
-            Aba Extra • 24/10
-          </span>
         </button>
       </div>
 

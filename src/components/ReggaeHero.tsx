@@ -58,7 +58,7 @@ export const ReggaeHero: React.FC = () => {
             href="#fotos-da-festa"
             className="py-1.5 px-3.5 rounded-full bg-[#dc2626]/20 hover:bg-[#dc2626]/30 border border-[#dc2626]/40 text-xs font-serif-vintage font-bold text-[#fecaca] transition-all cursor-pointer backdrop-blur-xs shadow-xs active:scale-95 flex items-center gap-1.5"
           >
-            <span>🔒 Fotos da Festa (Aba Extra)</span>
+            <span>🔒 Fotos da Festa</span>
           </a>
         </motion.div>
       </div>
