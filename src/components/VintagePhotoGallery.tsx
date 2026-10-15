@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, Send, X, Sparkles, Trash2 } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 import { safeGetJson, safeSetJson, safeRemoveItem } from '../utils/storage';
@@ -64,14 +64,14 @@ const allPhotos: IgorPhoto[] = Array.from({ length: 39 }, (_, i) => {
 
 export const VintagePhotoGallery: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<IgorPhoto | null>(null);
-  const [photoToDelete, setPhotoToDelete] = useState<IgorPhoto | null>(null);
   const [visibleCount, setVisibleCount] = useState(12);
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
 
-  // Fotos excluídas da galeria (persistidas no servidor SQLite e localStorage)
+  // Fotos excluídas da galeria (garante que as fotos que o usuário excluiu NUNCA voltem)
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>(() => {
-    return safeGetJson<string[]>('trintou_igor_deleted_photos_v1', []);
+    const saved = safeGetJson<string[]>('trintou_igor_deleted_photos_v1', ['1']);
+    return Array.from(new Set(['1', ...(Array.isArray(saved) ? saved : [])]));
   });
 
   // Curtidas da maconha (inicia em 0 para todas as fotos)
@@ -121,7 +121,7 @@ export const VintagePhotoGallery: React.FC = () => {
 
       if (Array.isArray(resDeleted)) {
         setDeletedPhotoIds((prev) => {
-          const merged = Array.from(new Set([...prev, ...resDeleted.map(String)]));
+          const merged = Array.from(new Set(['1', ...prev, ...resDeleted.map(String)]));
           safeSetJson('trintou_igor_deleted_photos_v1', merged);
           return merged;
         });
@@ -136,33 +136,6 @@ export const VintagePhotoGallery: React.FC = () => {
     const interval = setInterval(fetchLiveData, 3500);
     return () => clearInterval(interval);
   }, []);
-
-  // Excluir foto e sincronizar com servidor
-  const handleConfirmDelete = async () => {
-    if (!photoToDelete) return;
-    const idToDelete = photoToDelete.id;
-
-    setDeletedPhotoIds((prev) => {
-      const updated = Array.from(new Set([...prev, idToDelete]));
-      safeSetJson('trintou_igor_deleted_photos_v1', updated);
-      return updated;
-    });
-
-    if (selectedPhoto?.id === idToDelete) {
-      setSelectedPhoto(null);
-    }
-    setPhotoToDelete(null);
-
-    try {
-      await fetch('/api/deleted-photos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photoId: idToDelete }),
-      });
-    } catch {
-      // ignore
-    }
-  };
 
   // Ação de Curtir com a Folha de Maconha
   const handleLike = async (photoId: string, e?: React.MouseEvent) => {
@@ -426,50 +399,6 @@ export const VintagePhotoGallery: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DE FOTO */}
-      <AnimatePresence>
-        {photoToDelete && (
-          <div
-            onClick={() => setPhotoToDelete(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              onClick={(e) => e.stopPropagation()}
-              className="max-w-sm w-full rounded-3xl bg-[#faf5eb] border-2 border-[#dfceb0] p-6 shadow-2xl text-[#26120c] text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center mb-3">
-                <Trash2 size={24} />
-              </div>
-              <h3 className="font-serif-vintage font-black text-lg uppercase mb-2">
-                Excluir Foto do Mural?
-              </h3>
-              <p className="text-xs font-serif-vintage text-[#7c5a45] mb-5 leading-relaxed">
-                Esta foto será removida permanentemente da galeria e não aparecerá mais para os convidados.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPhotoToDelete(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-[#c4b59f] text-xs font-serif-vintage font-bold text-[#26120c] hover:bg-[#ece0cc] transition-all cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-serif-vintage font-bold shadow-md transition-all cursor-pointer active:scale-95"
-                >
-                  Sim, Excluir
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* MODAL LIGHTBOX COM FOTO LIMPA */}
       <AnimatePresence>
         {selectedPhoto && (
@@ -495,7 +424,7 @@ export const VintagePhotoGallery: React.FC = () => {
               </button>
 
               <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto md:overflow-visible">
-                {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha e Excluir */}
+                {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha */}
                 <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#f5ece0] border-b md:border-b-0 md:border-r border-[#dfceb0]">
                   <div>
                     <div className="rounded-2xl overflow-hidden border-2 border-[#26120c] bg-black aspect-[4/5] max-h-[50vh] md:max-h-none shadow-md">
@@ -519,16 +448,9 @@ export const VintagePhotoGallery: React.FC = () => {
                       <span>Curtir ({likesMap[selectedPhoto.id] || 0})</span>
                     </button>
 
-                    {/* Botão Excluir no Modal */}
-                    <button
-                      type="button"
-                      onClick={() => setPhotoToDelete(selectedPhoto)}
-                      className="py-1.5 px-3 rounded-full bg-[#fae8e8] hover:bg-red-600 text-red-700 hover:text-white border border-red-200 hover:border-red-600 flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-                      title="Excluir foto do mural"
-                    >
-                      <Trash2 size={13} />
-                      <span>Excluir Foto</span>
-                    </button>
+                    <span className="text-[11px] font-serif-vintage text-[#7c5a45] italic">
+                      Mural do Glorioso • Trintou Igor
+                    </span>
                   </div>
                 </div>
 
