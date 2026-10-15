@@ -467,30 +467,6 @@ export const VintagePhotoGallery: React.FC = () => {
             </div>
           )}
 
-          {/* Banner de atalho para a Aba Fotos da Festa */}
-          <div className="mt-12 p-5 rounded-3xl bg-[#faf5eb] border-2 border-[#dfceb0] shadow-xl text-center max-w-xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] text-[11px] font-serif-vintage font-bold uppercase mb-2">
-              <Lock size={12} />
-              <span>Nova Aba Extra • Fotos da Festa</span>
-            </div>
-            <h3 className="text-base sm:text-lg font-serif-vintage font-black text-[#26120c] uppercase">
-              Procurando as fotos da festa oficial?
-            </h3>
-            <p className="text-xs font-serif-vintage text-[#7c5a45] mt-1 mb-4 leading-relaxed">
-              As fotos tiradas durante a comemoração de 30 anos serão liberadas no dia 24/10 na aba extra com contagem regressiva ao vivo!
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('festa');
-                window.history.replaceState(null, '', '#fotos-da-festa');
-              }}
-              className="py-2.5 px-6 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] border border-[#dfceb0] text-xs font-serif-vintage font-bold uppercase tracking-wider inline-flex items-center gap-2 cursor-pointer shadow-md transition-all active:scale-95"
-            >
-              <Lock className="w-3.5 h-3.5 text-[#eab308]" />
-              <span>Abrir Aba Fotos da Festa (Com Cronômetro)</span>
-            </button>
-          </div>
         </>
       )}
 
