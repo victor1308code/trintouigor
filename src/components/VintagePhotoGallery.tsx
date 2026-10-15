@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, Send, X, Sparkles } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, Lock } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 import { safeGetJson, safeSetJson, safeRemoveItem } from '../utils/storage';
+import { PartyPhotosSection } from './PartyPhotosSection';
 
 export interface PhotoComment {
   id: string;
@@ -67,6 +68,23 @@ export const VintagePhotoGallery: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(12);
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
+
+  // Aba selecionada: 'mural' (fotos do Igor) ou 'festa' (aba extra fotos da festa)
+  const [activeTab, setActiveTab] = useState<'mural' | 'festa'>('mural');
+
+  // Detecta se a URL apontou direto para #fotos-da-festa
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#fotos-da-festa') {
+        setActiveTab('festa');
+      } else if (window.location.hash === '#galeria' || window.location.hash === '#mural') {
+        setActiveTab('mural');
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // Fotos excluídas da galeria (garante que as fotos que o usuário excluiu NUNCA voltem)
   const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>(() => {
@@ -275,128 +293,205 @@ export const VintagePhotoGallery: React.FC = () => {
 
   return (
     <section id="galeria" className="relative py-12 px-4 max-w-6xl mx-auto">
-      {/* Título da Galeria / Mural */}
-      <div className="text-center mb-10">
-        <span className="text-xs font-serif-vintage tracking-widest text-[#e8c89b] uppercase block mb-1">
-          O MURAL DO GLORIOSO
-        </span>
-        <h2 className="text-3xl sm:text-4xl font-serif-vintage font-bold text-[#faf3e3] uppercase tracking-tight">
-          Momentos & Registros do Igor
-        </h2>
-        <p className="text-xs sm:text-sm font-serif-vintage italic text-[#e6d5c1] mt-1 max-w-md mx-auto">
-          Curta com a folhinha e deixe seu comentário pro aniversariante nas fotos polaroid.
-        </p>
+      {/* SELETOR DE ABAS DA GALERIA */}
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('mural');
+            window.history.replaceState(null, '', '#galeria');
+          }}
+          className={`py-2.5 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-serif-vintage font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 ${
+            activeTab === 'mural'
+              ? 'bg-[#26120c] text-[#faf5eb] border-2 border-[#e8c89b] shadow-xl'
+              : 'bg-[#faf5eb]/80 hover:bg-[#faf5eb] text-[#26120c] border border-[#dfceb0]'
+          }`}
+        >
+          <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
+          <span>Mural do Glorioso</span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#16a34a]/20 text-[#16a34a] font-bold">
+            {visiblePhotos.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('festa');
+            window.history.replaceState(null, '', '#fotos-da-festa');
+          }}
+          className={`py-2.5 px-5 sm:px-6 rounded-full text-xs sm:text-sm font-serif-vintage font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-md active:scale-95 relative ${
+            activeTab === 'festa'
+              ? 'bg-[#26120c] text-[#faf5eb] border-2 border-[#e8c89b] shadow-xl'
+              : 'bg-[#faf5eb]/80 hover:bg-[#faf5eb] text-[#26120c] border border-[#dfceb0]'
+          }`}
+        >
+          <Lock className="w-3.5 h-3.5 text-[#dc2626]" />
+          <span>Fotos da Festa</span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#dc2626]/15 text-[#dc2626] font-bold uppercase border border-[#dc2626]/20">
+            Aba Extra • 24/10
+          </span>
+        </button>
       </div>
 
-      {/* Grid de Polaroids (Fotos ordenadas da mais curtida para a menos curtida) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {displayedPhotos.map((photo, index) => {
-          const photoComments = getCommentsForPhoto(photo.id);
-          const latestComment = photoComments[0];
-          const likesCount = likesMap[photo.id] || 0;
-          const isTop1 = index === 0 && likesCount > 0;
+      {activeTab === 'festa' ? (
+        <PartyPhotosSection
+          onBackToMural={() => {
+            setActiveTab('mural');
+            window.history.replaceState(null, '', '#galeria');
+          }}
+        />
+      ) : (
+        <>
+          {/* Título da Galeria / Mural */}
+          <div className="text-center mb-10">
+            <span className="text-xs font-serif-vintage tracking-widest text-[#e8c89b] uppercase block mb-1">
+              O MURAL DO GLORIOSO
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-serif-vintage font-bold text-[#faf3e3] uppercase tracking-tight">
+              Momentos & Registros do Igor
+            </h2>
+            <p className="text-xs sm:text-sm font-serif-vintage italic text-[#e6d5c1] mt-1 max-w-md mx-auto">
+              Curta com a folhinha e deixe seu comentário pro aniversariante nas fotos polaroid.
+            </p>
+          </div>
 
-          return (
-            <motion.div
-              layout
-              key={photo.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              whileHover={{ scale: 1.03, rotate: 0 }}
-              transition={{
-                layout: { duration: 0.45, ease: 'easeInOut' },
-              }}
-              onClick={() => setSelectedPhoto(photo)}
-              className={`p-3 pb-4 rounded-2xl bg-[#faf5eb] border border-[#e5decb] shadow-xl hover:shadow-2xl transition-all cursor-pointer relative flex flex-col justify-between ${photo.rotation}`}
-            >
-              {/* Selo #1 Mais Chapada quando houver curtidas */}
-              {isTop1 ? (
-                <div className="absolute top-4 right-4 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
-                  <CannabisLeafIcon className="w-3 h-3 text-[#fde047]" />
-                  <span>#1 Mais Chapada</span>
-                </div>
-              ) : null}
+          {/* Grid de Polaroids (Fotos ordenadas da mais curtida para a menos curtida) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {displayedPhotos.map((photo, index) => {
+              const photoComments = getCommentsForPhoto(photo.id);
+              const latestComment = photoComments[0];
+              const likesCount = likesMap[photo.id] || 0;
+              const isTop1 = index === 0 && likesCount > 0;
 
-              {/* Fita crepe no topo da polaroid */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f0e3cc]/80 border border-[#dfceb0] shadow-xs transform rotate-1 pointer-events-none" />
+              return (
+                <motion.div
+                  layout
+                  key={photo.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  whileHover={{ scale: 1.03, rotate: 0 }}
+                  transition={{
+                    layout: { duration: 0.45, ease: 'easeInOut' },
+                  }}
+                  onClick={() => setSelectedPhoto(photo)}
+                  className={`p-3 pb-4 rounded-2xl bg-[#faf5eb] border border-[#e5decb] shadow-xl hover:shadow-2xl transition-all cursor-pointer relative flex flex-col justify-between ${photo.rotation}`}
+                >
+                  {/* Selo #1 Mais Chapada quando houver curtidas */}
+                  {isTop1 ? (
+                    <div className="absolute top-4 right-4 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
+                      <CannabisLeafIcon className="w-3 h-3 text-[#fde047]" />
+                      <span>#1 Mais Chapada</span>
+                    </div>
+                  ) : null}
 
-              <div>
-                {/* A Foto com moldura clássica de Polaroid limpa */}
-                <div className="aspect-[4/5] overflow-hidden rounded-xl bg-neutral-900 border border-[#e5decb] relative">
-                  <picture className="w-full h-full block">
-                    <source srcSet={photo.thumbWebp} type="image/webp" />
-                    <img
-                      src={photo.thumbJpg}
-                      alt="Foto do Igor"
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover object-top filter contrast-[1.05] hover:scale-105 transition-transform duration-500"
-                    />
-                  </picture>
-                </div>
-              </div>
+                  {/* Fita crepe no topo da polaroid */}
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 bg-[#f0e3cc]/80 border border-[#dfceb0] shadow-xs transform rotate-1 pointer-events-none" />
 
-              {/* Área de Ações: Curtir da Maconha + Botão Comentar */}
-              <div className="mt-3.5 pt-2.5 border-t border-[#e8ded0] px-1">
-                <div className="flex items-center justify-between gap-2">
-                  {/* BOTÃO DE CURTIR DA MACONHA */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleLike(photo.id, e)}
-                    className="group py-1.5 px-3 rounded-full bg-[#f2e7d5] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-1.5 text-xs font-serif-vintage font-bold text-[#26120c] transition-all shadow-xs active:scale-90 cursor-pointer"
-                    title="Dar uma curtida de maconha nessa foto"
-                  >
-                    <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
-                    <span>{likesCount}</span>
-                  </button>
-
-                  {/* BOTÃO COMENTAR */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedPhoto(photo);
-                    }}
-                    className="py-1.5 px-3.5 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
-                  >
-                    <MessageCircle size={13} className="text-[#eab308]" />
-                    <span>Comentar</span>
-                    {photoComments.length > 0 && (
-                      <span className="bg-[#eab308] text-[#26120c] text-[10px] font-black px-1.5 rounded-full">
-                        {photoComments.length}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {/* Exibição do Último Comentário (se algum visitante comentou) */}
-                {latestComment && (
-                  <div className="mt-2 p-2 rounded-xl bg-[#f4ebe0] border border-[#e2d5c3] text-[11px] text-[#5e4130] flex items-start gap-1.5 line-clamp-1">
-                    <span className="font-bold text-[#26120c] flex-shrink-0">
-                      {latestComment.author}:
-                    </span>
-                    <span className="italic truncate">"{latestComment.text}"</span>
+                  <div>
+                    {/* A Foto com moldura clássica de Polaroid limpa */}
+                    <div className="aspect-[4/5] overflow-hidden rounded-xl bg-neutral-900 border border-[#e5decb] relative">
+                      <picture className="w-full h-full block">
+                        <source srcSet={photo.thumbWebp} type="image/webp" />
+                        <img
+                          src={photo.thumbJpg}
+                          alt="Foto do Igor"
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover object-top filter contrast-[1.05] hover:scale-105 transition-transform duration-500"
+                        />
+                      </picture>
+                    </div>
                   </div>
-                )}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
 
-      {/* Botão de Ver Mais Fotos (Carregamento progressivo rápido para celular) */}
-      {visibleCount < sortedPhotos.length && (
-        <div className="mt-10 text-center">
-          <button
-            type="button"
-            onClick={() => setVisibleCount((prev) => Math.min(prev + 12, sortedPhotos.length))}
-            className="inline-flex items-center gap-2.5 py-3 px-7 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] border border-[#dfceb0] text-xs font-serif-vintage font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95"
-          >
-            <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
-            <span>Ver Mais Fotos ({visibleCount} de {sortedPhotos.length})</span>
-          </button>
-        </div>
+                  {/* Área de Ações: Curtir da Maconha + Botão Comentar */}
+                  <div className="mt-3.5 pt-2.5 border-t border-[#e8ded0] px-1">
+                    <div className="flex items-center justify-between gap-2">
+                      {/* BOTÃO DE CURTIR DA MACONHA */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleLike(photo.id, e)}
+                        className="group py-1.5 px-3 rounded-full bg-[#f2e7d5] hover:bg-[#e3f2e5] hover:border-[#16a34a] border border-[#ded0b9] flex items-center gap-1.5 text-xs font-serif-vintage font-bold text-[#26120c] transition-all shadow-xs active:scale-90 cursor-pointer"
+                        title="Dar uma curtida de maconha nessa foto"
+                      >
+                        <CannabisLeafIcon className="w-4 h-4 text-[#16a34a] group-hover:scale-125 transition-transform" />
+                        <span>{likesCount}</span>
+                      </button>
+
+                      {/* BOTÃO COMENTAR */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPhoto(photo);
+                        }}
+                        className="py-1.5 px-3.5 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-sm active:scale-95 cursor-pointer"
+                      >
+                        <MessageCircle size={13} className="text-[#eab308]" />
+                        <span>Comentar</span>
+                        {photoComments.length > 0 && (
+                          <span className="bg-[#eab308] text-[#26120c] text-[10px] font-black px-1.5 rounded-full">
+                            {photoComments.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Exibição do Último Comentário (se algum visitante comentou) */}
+                    {latestComment && (
+                      <div className="mt-2 p-2 rounded-xl bg-[#f4ebe0] border border-[#e2d5c3] text-[11px] text-[#5e4130] flex items-start gap-1.5 line-clamp-1">
+                        <span className="font-bold text-[#26120c] flex-shrink-0">
+                          {latestComment.author}:
+                        </span>
+                        <span className="italic truncate">"{latestComment.text}"</span>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Botão de Ver Mais Fotos (Carregamento progressivo rápido para celular) */}
+          {visibleCount < sortedPhotos.length && (
+            <div className="mt-10 text-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => Math.min(prev + 12, sortedPhotos.length))}
+                className="inline-flex items-center gap-2.5 py-3 px-7 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] border border-[#dfceb0] text-xs font-serif-vintage font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95"
+              >
+                <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
+                <span>Ver Mais Fotos ({visibleCount} de {sortedPhotos.length})</span>
+              </button>
+            </div>
+          )}
+
+          {/* Banner de atalho para a Aba Fotos da Festa */}
+          <div className="mt-12 p-5 rounded-3xl bg-[#faf5eb] border-2 border-[#dfceb0] shadow-xl text-center max-w-xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] text-[11px] font-serif-vintage font-bold uppercase mb-2">
+              <Lock size={12} />
+              <span>Nova Aba Extra • Fotos da Festa</span>
+            </div>
+            <h3 className="text-base sm:text-lg font-serif-vintage font-black text-[#26120c] uppercase">
+              Procurando as fotos da festa oficial?
+            </h3>
+            <p className="text-xs font-serif-vintage text-[#7c5a45] mt-1 mb-4 leading-relaxed">
+              As fotos tiradas durante a comemoração de 30 anos serão liberadas no dia 24/10 na aba extra com contagem regressiva ao vivo!
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('festa');
+                window.history.replaceState(null, '', '#fotos-da-festa');
+              }}
+              className="py-2.5 px-6 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] border border-[#dfceb0] text-xs font-serif-vintage font-bold uppercase tracking-wider inline-flex items-center gap-2 cursor-pointer shadow-md transition-all active:scale-95"
+            >
+              <Lock className="w-3.5 h-3.5 text-[#eab308]" />
+              <span>Abrir Aba Fotos da Festa (Com Cronômetro)</span>
+            </button>
+          </div>
+        </>
       )}
 
       {/* MODAL LIGHTBOX COM FOTO LIMPA */}

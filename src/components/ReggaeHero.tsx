@@ -34,6 +34,33 @@ export const ReggaeHero: React.FC = () => {
             4:20
           </span>
         </motion.h1>
+
+        {/* Links Rápidos / Abas de Navegação */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-6"
+        >
+          <a
+            href="#agenda"
+            className="py-1.5 px-3.5 rounded-full bg-[#faf5eb]/10 hover:bg-[#faf5eb]/20 border border-[#dfceb0]/30 text-xs font-serif-vintage font-bold text-[#faf5eb] transition-all cursor-pointer backdrop-blur-xs shadow-xs active:scale-95"
+          >
+            📅 Agenda & Beckômetro
+          </a>
+          <a
+            href="#galeria"
+            className="py-1.5 px-3.5 rounded-full bg-[#faf5eb]/10 hover:bg-[#faf5eb]/20 border border-[#dfceb0]/30 text-xs font-serif-vintage font-bold text-[#faf5eb] transition-all cursor-pointer backdrop-blur-xs shadow-xs active:scale-95"
+          >
+            📸 Mural de Fotos
+          </a>
+          <a
+            href="#fotos-da-festa"
+            className="py-1.5 px-3.5 rounded-full bg-[#dc2626]/20 hover:bg-[#dc2626]/30 border border-[#dc2626]/40 text-xs font-serif-vintage font-bold text-[#fecaca] transition-all cursor-pointer backdrop-blur-xs shadow-xs active:scale-95 flex items-center gap-1.5"
+          >
+            <span>🔒 Fotos da Festa (Aba Extra)</span>
+          </a>
+        </motion.div>
       </div>
     </div>
   );
