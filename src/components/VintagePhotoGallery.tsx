@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, Send, X, Sparkles, Trash2, RotateCcw, Copy, Check } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, Copy, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
+import { safeGetJson, safeSetJson, safeRemoveItem } from '../utils/storage';
 
 export interface PhotoComment {
   id: string;
@@ -15,6 +16,8 @@ export interface PhotoComment {
 interface IgorPhoto {
   id: string;
   src: string;
+  thumbWebp: string;
+  thumbJpg: string;
   rotation: string;
   isQr?: boolean;
 }
@@ -48,11 +51,13 @@ const ALL_ROTATIONS = [
   'rotate-[1deg]',
 ];
 
-// O QR Code Oficial que veio na pasta + Todas as 39 Fotos da Festa e do Igor
+// O QR Code Oficial + Todas as 39 Fotos do Igor com miniaturas otimizadas
 const allPhotos: IgorPhoto[] = [
   {
     id: 'pix-oficial',
     src: '/pix-qrcode-oficial.jpg',
+    thumbWebp: '/photos/thumbs/pix-oficial.webp',
+    thumbJpg: '/photos/thumbs/pix-oficial.jpg',
     rotation: 'rotate-[-1deg]',
     isQr: true,
   },
@@ -61,6 +66,8 @@ const allPhotos: IgorPhoto[] = [
     return {
       id: String(num),
       src: `/photos/igor-${num}.jpg`,
+      thumbWebp: `/photos/thumbs/igor-${num}.webp`,
+      thumbJpg: `/photos/thumbs/igor-${num}.jpg`,
       rotation: ALL_ROTATIONS[i % ALL_ROTATIONS.length],
     };
   }),
@@ -68,7 +75,7 @@ const allPhotos: IgorPhoto[] = [
 
 export const VintagePhotoGallery: React.FC = () => {
   const [selectedPhoto, setSelectedPhoto] = useState<IgorPhoto | null>(null);
-  const [photoToDelete, setPhotoToDelete] = useState<IgorPhoto | null>(null);
+  const [visibleCount, setVisibleCount] = useState(12);
   const [newAuthor, setNewAuthor] = useState('');
   const [newComment, setNewComment] = useState('');
   const [copiedKey, setCopiedKey] = useState(false);
@@ -81,64 +88,66 @@ export const VintagePhotoGallery: React.FC = () => {
 
   const handleCopyKey = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    navigator.clipboard.writeText(pixKeyPhone);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pixKeyPhone);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = pixKeyPhone;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+    } catch {
+      // fallback
+    }
     setCopiedKey(true);
     setTimeout(() => setCopiedKey(false), 2500);
   };
 
   const handleCopyPayload = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    navigator.clipboard.writeText(pixCopiaCola);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(pixCopiaCola);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = pixCopiaCola;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+    } catch {
+      // fallback
+    }
     setCopiedPayload(true);
     setTimeout(() => setCopiedPayload(false), 2500);
   };
 
-  // Fotos excluídas da galeria (persistidas localmente e sincronizadas)
-  const [deletedPhotoIds, setDeletedPhotoIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('trintou_igor_deleted_photos_v1');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return [];
-  });
-
   // Curtidas da maconha (inicia em 0 para todas as fotos)
   const [likesMap, setLikesMap] = useState<Record<string, number>>(() => {
-    try {
-      const saved = localStorage.getItem('trintou_igor_photo_cannabis_likes_v1');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
     const initial: Record<string, number> = { 'pix-oficial': 0 };
     for (let i = 1; i <= 39; i++) {
       initial[String(i)] = 0;
     }
-    return initial;
+    return safeGetJson<Record<string, number>>('trintou_igor_photo_cannabis_likes_v1', initial);
   });
 
   // Comentários dos visitantes
   const [comments, setComments] = useState<PhotoComment[]>(() => {
-    try {
-      localStorage.removeItem('trintou_igor_photo_comments_v2');
-      localStorage.removeItem('trintou_igor_photo_comments_clean_v3');
-      const saved = localStorage.getItem('trintou_igor_photo_comments_empty_v4');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // ignore
-    }
-    return [];
+    safeRemoveItem('trintou_igor_photo_comments_v2');
+    safeRemoveItem('trintou_igor_photo_comments_clean_v3');
+    return safeGetJson<PhotoComment[]>('trintou_igor_photo_comments_empty_v4', []);
   });
 
   // Sincronização central ao vivo (polling a cada 3.5 segundos)
   const fetchLiveData = async () => {
     try {
-      const [resComments, resLikes, resDeleted] = await Promise.all([
+      const [resComments, resLikes] = await Promise.all([
         fetch('/api/comments').then((r) => (r.ok ? r.json() : null)).catch(() => null),
         fetch('/api/likes').then((r) => (r.ok ? r.json() : null)).catch(() => null),
-        fetch('/api/deleted-photos').then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
 
       if (Array.isArray(resComments)) {
@@ -150,34 +159,14 @@ export const VintagePhotoGallery: React.FC = () => {
           timestamp: formatCommentTime(c.createdAt),
         }));
         setComments(formatted);
-        try {
-          localStorage.setItem('trintou_igor_photo_comments_empty_v4', JSON.stringify(formatted));
-        } catch {
-          // ignore
-        }
+        safeSetJson('trintou_igor_photo_comments_empty_v4', formatted);
       }
 
       if (resLikes && typeof resLikes === 'object') {
         setLikesMap((prev) => {
           const updated = { ...prev, ...resLikes };
-          try {
-            localStorage.setItem('trintou_igor_photo_cannabis_likes_v1', JSON.stringify(updated));
-          } catch {
-            // ignore
-          }
+          safeSetJson('trintou_igor_photo_cannabis_likes_v1', updated);
           return updated;
-        });
-      }
-
-      if (Array.isArray(resDeleted)) {
-        setDeletedPhotoIds((prev) => {
-          const merged = Array.from(new Set([...prev, ...resDeleted.map(String)]));
-          try {
-            localStorage.setItem('trintou_igor_deleted_photos_v1', JSON.stringify(merged));
-          } catch {
-            // ignore
-          }
-          return merged;
         });
       }
     } catch {
@@ -190,9 +179,6 @@ export const VintagePhotoGallery: React.FC = () => {
     const interval = setInterval(fetchLiveData, 3500);
     return () => clearInterval(interval);
   }, []);
-
-  // Fotos visíveis (excluindo as que foram removidas pelo botão de exclusão)
-  const visiblePhotos = allPhotos.filter((p) => !deletedPhotoIds.includes(p.id));
 
   // Ação de Curtir com a Folha de Maconha
   const handleLike = async (photoId: string, e?: React.MouseEvent) => {
@@ -311,50 +297,8 @@ export const VintagePhotoGallery: React.FC = () => {
     }
   };
 
-  // Excluir foto
-  const handleConfirmDelete = async () => {
-    if (!photoToDelete) return;
-    const idToDelete = photoToDelete.id;
-
-    setDeletedPhotoIds((prev) => {
-      const updated = Array.from(new Set([...prev, idToDelete]));
-      try {
-        localStorage.setItem('trintou_igor_deleted_photos_v1', JSON.stringify(updated));
-      } catch {
-        // ignore
-      }
-      return updated;
-    });
-
-    if (selectedPhoto?.id === idToDelete) {
-      setSelectedPhoto(null);
-    }
-    setPhotoToDelete(null);
-
-    try {
-      await fetch('/api/deleted-photos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photoId: idToDelete }),
-      });
-    } catch {
-      // ignore
-    }
-  };
-
-  // Restaurar todas as fotos excluídas
-  const handleRestoreAllPhotos = async () => {
-    setDeletedPhotoIds([]);
-    try {
-      localStorage.removeItem('trintou_igor_deleted_photos_v1');
-      await fetch('/api/deleted-photos/restore-all', { method: 'POST' });
-    } catch {
-      // ignore
-    }
-  };
-
   // Fotos ordenadas da mais curtida para a menos curtida (baseado no número de maconhas / curtidas)
-  const sortedPhotos = [...visiblePhotos].sort((a, b) => {
+  const sortedPhotos = [...allPhotos].sort((a, b) => {
     const likesA = likesMap[a.id] || 0;
     const likesB = likesMap[b.id] || 0;
     if (likesB !== likesA) {
@@ -365,6 +309,8 @@ export const VintagePhotoGallery: React.FC = () => {
     return Number(a.id) - Number(b.id);
   });
 
+  const displayedPhotos = sortedPhotos.slice(0, visibleCount);
+
   const getCommentsForPhoto = (photoId: string) => {
     return comments.filter((c) => c.photoId === photoId);
   };
@@ -374,7 +320,7 @@ export const VintagePhotoGallery: React.FC = () => {
       {/* Título da Galeria / Mural */}
       <div className="text-center mb-10">
         <span className="text-xs font-serif-vintage tracking-widest text-[#e8c89b] uppercase block mb-1">
-          O MURAL DO GLORIOSO ({visiblePhotos.length} REGISTROS)
+          O MURAL DO GLORIOSO
         </span>
         <h2 className="text-3xl sm:text-4xl font-serif-vintage font-bold text-[#faf3e3] uppercase tracking-tight">
           Momentos & Registros do Igor
@@ -386,11 +332,11 @@ export const VintagePhotoGallery: React.FC = () => {
 
       {/* Grid de Polaroids (Fotos ordenadas da mais curtida para a menos curtida) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-        {sortedPhotos.map((photo, index) => {
+        {displayedPhotos.map((photo, index) => {
           const photoComments = getCommentsForPhoto(photo.id);
           const latestComment = photoComments[0];
           const likesCount = likesMap[photo.id] || 0;
-          const isTop1 = index === 0 && likesCount > 0;
+          const isTop1 = index === 0 && likesCount > 0 && !photo.isQr;
 
           return (
             <motion.div
@@ -399,33 +345,16 @@ export const VintagePhotoGallery: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              whileHover={{ scale: 1.025, rotate: 0 }}
+              whileHover={{ scale: 1.03, rotate: 0 }}
               transition={{
                 layout: { duration: 0.45, ease: 'easeInOut' },
               }}
               onClick={() => setSelectedPhoto(photo)}
               className={`p-3 pb-4 rounded-2xl bg-[#faf5eb] border border-[#e5decb] shadow-xl hover:shadow-2xl transition-all cursor-pointer relative flex flex-col justify-between ${photo.rotation}`}
             >
-              {/* Botão de Excluir Foto na Polaroid */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPhotoToDelete(photo);
-                }}
-                className="absolute top-3 left-3 z-20 w-7 h-7 rounded-full bg-white/90 hover:bg-red-600 text-[#8c6d58] hover:text-white flex items-center justify-center transition-all shadow-md border border-[#dfceb0] hover:border-red-600 cursor-pointer active:scale-90"
-                title={photo.isQr ? "Ocultar QR Code" : "Excluir esta foto"}
-              >
-                <Trash2 size={13} />
-              </button>
-
-              {/* Selo #1 Mais Chapada OU Selo PIX Oficial */}
-              {photo.isQr ? (
-                <div className="absolute top-3 right-3 z-10 bg-[#eab308] text-[#26120c] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#ca8a04] flex items-center gap-1 pointer-events-none">
-                  <span>★ PIX OFICIAL DO IGOR</span>
-                </div>
-              ) : isTop1 ? (
-                <div className="absolute top-3 right-3 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
+              {/* Selo #1 Mais Chapada quando houver curtidas */}
+              {isTop1 ? (
+                <div className="absolute top-4 right-4 z-10 bg-[#16a34a] text-[#faf5eb] text-[10px] font-black uppercase font-serif-vintage px-2 py-0.5 rounded-full shadow-md border border-[#15803d] flex items-center gap-1 pointer-events-none">
                   <CannabisLeafIcon className="w-3 h-3 text-[#fde047]" />
                   <span>#1 Mais Chapada</span>
                 </div>
@@ -437,12 +366,16 @@ export const VintagePhotoGallery: React.FC = () => {
               <div>
                 {/* A Foto ou QR Code com moldura clássica de Polaroid limpa */}
                 <div className="aspect-[4/5] overflow-hidden rounded-xl bg-neutral-900 border border-[#e5decb] relative">
-                  <img
-                    src={photo.src}
-                    alt={photo.isQr ? "QR Code Oficial Pix do Igor" : "Foto do Igor"}
-                    loading="lazy"
-                    className={`w-full h-full ${photo.isQr ? 'object-contain bg-white p-3' : 'object-cover object-top'} filter contrast-[1.05] hover:scale-105 transition-transform duration-500`}
-                  />
+                  <picture className="w-full h-full block">
+                    <source srcSet={photo.thumbWebp} type="image/webp" />
+                    <img
+                      src={photo.thumbJpg}
+                      alt={photo.isQr ? "QR Code Oficial Pix do Igor" : "Foto do Igor"}
+                      loading="lazy"
+                      decoding="async"
+                      className={`w-full h-full ${photo.isQr ? 'object-contain bg-white p-3' : 'object-cover object-top'} filter contrast-[1.05] hover:scale-105 transition-transform duration-500`}
+                    />
+                  </picture>
                 </div>
               </div>
 
@@ -515,65 +448,19 @@ export const VintagePhotoGallery: React.FC = () => {
         })}
       </div>
 
-      {/* Botão de Restaurar Fotos Excluídas (se houver alguma) */}
-      {deletedPhotoIds.length > 0 && (
+      {/* Botão de Ver Mais Fotos (Carregamento progressivo rápido para celular) */}
+      {visibleCount < sortedPhotos.length && (
         <div className="mt-10 text-center">
           <button
             type="button"
-            onClick={handleRestoreAllPhotos}
-            className="inline-flex items-center gap-2 py-2 px-4 rounded-full bg-[#f2e7d5]/90 hover:bg-[#e6d7be] border border-[#dfceb0] text-xs font-serif-vintage text-[#5e4130] transition-all cursor-pointer shadow-sm active:scale-95"
+            onClick={() => setVisibleCount((prev) => Math.min(prev + 12, sortedPhotos.length))}
+            className="inline-flex items-center gap-2.5 py-3 px-7 rounded-full bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] border border-[#dfceb0] text-xs font-serif-vintage font-bold uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95"
           >
-            <RotateCcw size={13} className="text-[#16a34a]" />
-            <span>Restaurar {deletedPhotoIds.length} foto{deletedPhotoIds.length > 1 ? 's' : ''} excluída{deletedPhotoIds.length > 1 ? 's' : ''}</span>
+            <CannabisLeafIcon className="w-4 h-4 text-[#16a34a]" />
+            <span>Ver Mais Fotos ({visibleCount} de {sortedPhotos.length})</span>
           </button>
         </div>
       )}
-
-      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO DE FOTO */}
-      <AnimatePresence>
-        {photoToDelete && (
-          <div
-            onClick={() => setPhotoToDelete(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              onClick={(e) => e.stopPropagation()}
-              className="max-w-sm w-full rounded-3xl bg-[#faf5eb] border-2 border-[#dfceb0] p-6 shadow-2xl text-[#26120c] text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center mb-3">
-                <Trash2 size={24} />
-              </div>
-              <h3 className="font-serif-vintage font-black text-lg uppercase mb-2">
-                {photoToDelete.isQr ? "Ocultar QR Code do Mural?" : "Excluir Foto do Mural?"}
-              </h3>
-              <p className="text-xs font-serif-vintage text-[#7c5a45] mb-5 leading-relaxed">
-                {photoToDelete.isQr 
-                  ? "O card do QR Code será removido da galeria (continuará visível na seção do Beckômetro)."
-                  : "Esta foto será removida da galeria e não aparecerá mais para os convidados."}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPhotoToDelete(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-[#c4b59f] text-xs font-serif-vintage font-bold text-[#26120c] hover:bg-[#ece0cc] transition-all cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-serif-vintage font-bold shadow-md transition-all cursor-pointer active:scale-95"
-                >
-                  Sim, Excluir
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* MODAL LIGHTBOX COM FOTO LIMPA OU QR CODE */}
       <AnimatePresence>
@@ -616,32 +503,33 @@ export const VintagePhotoGallery: React.FC = () => {
                     <img
                       src={selectedPhoto.src}
                       alt="QR Code Oficial Pix do Igor"
+                      decoding="async"
                       className="w-full aspect-square object-contain rounded-xl"
                     />
                   </div>
 
-                  <div className="mb-4">
-                    <span className="font-mono text-sm text-[#26120c] block font-bold">
-                      {pixKeyDisplay}
-                    </span>
-                    <span className="text-xs text-[#7c5a45] font-serif-vintage block">
-                      {pixBeneficiary}
-                    </span>
+                  <div className="bg-[#f5ede0] p-3 rounded-xl border border-[#e5d8c3] mb-4 text-xs font-mono space-y-1">
+                    <p className="text-[#26120c] font-bold">
+                      Beneficiário: <span className="font-normal">{pixBeneficiary}</span>
+                    </p>
+                    <p className="text-[#26120c] font-bold">
+                      Chave Celular: <span className="text-[#16a34a] font-black">{pixKeyDisplay}</span>
+                    </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={handleCopyKey}
-                      className="py-2.5 px-4 rounded-xl bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-[#26120c] hover:bg-[#3f1f14] text-[#faf5eb] font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
                     >
                       {copiedKey ? <Check size={14} className="text-[#16a34a]" /> : <Copy size={14} className="text-[#eab308]" />}
-                      <span>{copiedKey ? 'Copiada!' : 'Copiar Chave'}</span>
+                      <span>{copiedKey ? 'Chave Copiada!' : 'Copiar Chave'}</span>
                     </button>
                     <button
                       type="button"
                       onClick={handleCopyPayload}
-                      className="py-2.5 px-4 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
+                      className="flex-1 py-2.5 px-3 rounded-xl bg-[#16a34a] hover:bg-[#15803d] text-white font-serif-vintage font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
                     >
                       {copiedPayload ? <Check size={14} /> : <Copy size={14} />}
                       <span>{copiedPayload ? 'Copiado!' : 'Copia e Cola'}</span>
@@ -651,13 +539,14 @@ export const VintagePhotoGallery: React.FC = () => {
               ) : (
                 /* MODAL PADRÃO DAS FOTOS COM COMENTÁRIOS E CURTIR */
                 <div className="grid grid-cols-1 md:grid-cols-12 max-h-[85vh] overflow-y-auto md:overflow-visible">
-                  {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha e Excluir */}
+                  {/* Coluna 1: A Foto Ampliada (Limpa) com Botão de Curtir da Maconha */}
                   <div className="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between bg-[#f5ece0] border-b md:border-b-0 md:border-r border-[#dfceb0]">
                     <div>
                       <div className="rounded-2xl overflow-hidden border-2 border-[#26120c] bg-black aspect-[4/5] max-h-[50vh] md:max-h-none shadow-md">
                         <img
                           src={selectedPhoto.src}
                           alt="Foto do Igor ampliada"
+                          decoding="async"
                           className="w-full h-full object-cover object-top"
                         />
                       </div>
@@ -674,16 +563,9 @@ export const VintagePhotoGallery: React.FC = () => {
                         <span>Curtir ({likesMap[selectedPhoto.id] || 0})</span>
                       </button>
 
-                      {/* Botão Excluir no Modal */}
-                      <button
-                        type="button"
-                        onClick={() => setPhotoToDelete(selectedPhoto)}
-                        className="py-1.5 px-3 rounded-full bg-[#fae8e8] hover:bg-red-600 text-red-700 hover:text-white border border-red-200 hover:border-red-600 flex items-center gap-1.5 text-xs font-serif-vintage font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-                        title="Excluir foto"
-                      >
-                        <Trash2 size={13} />
-                        <span>Excluir Foto</span>
-                      </button>
+                      <span className="text-xs font-serif-vintage text-[#7c5a45] italic">
+                        Mural do Glorioso • Trintou Igor
+                      </span>
                     </div>
                   </div>
 

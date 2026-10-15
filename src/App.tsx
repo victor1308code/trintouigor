@@ -6,32 +6,22 @@ import { ReggaeCalendar } from './components/ReggaeCalendar';
 import { VintagePhotoGallery } from './components/VintagePhotoGallery';
 import { ReggaeLocation } from './components/ReggaeLocation';
 
+import { safeGetJson, safeSetJson, safeRemoveItem } from './utils/storage';
+
 export function App() {
   const [burstCount, setBurstCount] = useState(0);
 
   // Reseta o valor para 0 conforme solicitado
   const [donations, setDonations] = useState<Donation[]>(() => {
-    try {
-      localStorage.removeItem('trintou_igor_donations_reggae');
-      localStorage.removeItem('trintou_igor_donations_reggae_v2');
-    } catch {
-      // ignore
-    }
-    const saved = localStorage.getItem('trintou_igor_donations_zero_v4');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [];
+    safeRemoveItem('trintou_igor_donations_reggae');
+    safeRemoveItem('trintou_igor_donations_reggae_v2');
+    return safeGetJson<Donation[]>('trintou_igor_donations_zero_v4', []);
   });
 
   const totalAmount = donations.reduce((acc, curr) => acc + curr.amount, 0);
 
   useEffect(() => {
-    localStorage.setItem('trintou_igor_donations_zero_v4', JSON.stringify(donations));
+    safeSetJson('trintou_igor_donations_zero_v4', donations);
   }, [donations]);
 
   const handleAddDonation = (newDonation: Omit<Donation, 'id' | 'timestamp'>) => {

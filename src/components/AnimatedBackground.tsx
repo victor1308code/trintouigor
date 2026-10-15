@@ -79,14 +79,19 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
       };
     };
 
-    // Partículas iniciais ambientais
+    const isMobile = width < 768;
+    const maxParticles = isMobile ? 28 : 65;
+
+    // Partículas iniciais ambientais adaptadas para mobile/desktop
     if (particlesRef.current.length === 0) {
-      for (let i = 0; i < 35; i++) {
+      const initialSmoke = isMobile ? 14 : 35;
+      const initialEmber = isMobile ? 10 : 25;
+      for (let i = 0; i < initialSmoke; i++) {
         const p = createParticle('smoke', Math.random() * width, Math.random() * height);
         p.life = Math.random() * p.maxLife;
         particlesRef.current.push(p);
       }
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < initialEmber; i++) {
         const p = createParticle('ember', Math.random() * width, Math.random() * height);
         p.life = Math.random() * p.maxLife;
         particlesRef.current.push(p);
@@ -98,9 +103,9 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
       const particles = particlesRef.current;
 
       // Adiciona novas partículas ambiente regulares
-      if (particles.length < 65) {
-        if (Math.random() < 0.3) particles.push(createParticle('smoke'));
-        if (Math.random() < 0.25) particles.push(createParticle('ember'));
+      if (particles.length < maxParticles) {
+        if (Math.random() < 0.25) particles.push(createParticle('smoke'));
+        if (Math.random() < 0.2) particles.push(createParticle('ember'));
       }
 
       for (let i = particles.length - 1; i >= 0; i--) {
@@ -157,11 +162,8 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
           ctx.fill();
         } else {
           ctx.fillStyle = `${p.color}${p.alpha})`;
-          ctx.shadowBlur = 8;
-          ctx.shadowColor = '#f59e0b';
           ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
           ctx.fill();
-          ctx.shadowBlur = 0;
         }
       }
 
@@ -197,8 +199,8 @@ export const AnimatedBackground: React.FC<{ burstTrigger?: number }> = ({ burstT
       'rgba(220, 38, 38, ',   // Nuvem vermelha brasa
     ];
 
-    // Geração de 160 partículas para criar uma parede colossal de fumaça
-    const totalPuffParticles = 160;
+    const isMobile = window.innerWidth < 768;
+    const totalPuffParticles = isMobile ? 65 : 160;
 
     for (let i = 0; i < totalPuffParticles; i++) {
       // Distribuição em leque largo e anéis expansivos

@@ -20,7 +20,8 @@ const getCurrentDayOfMonth = () => {
 };
 
 export const ReggaeCalendar: React.FC = () => {
-  const targetDate = new Date('2026-10-24T20:00:00').getTime();
+  // 24 de Outubro de 2026 às 20h (mês 9 = outubro, seguro em qualquer celular e iOS)
+  const targetDate = new Date(2026, 9, 24, 20, 0, 0).getTime();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [rsvpName, setRsvpName] = useState('');
   const [rsvpDone, setRsvpDone] = useState(false);
