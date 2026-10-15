@@ -34,13 +34,6 @@ db.exec(`
   );
 `);
 
-// Restaura todas as fotos para garantir que nenhuma fique oculta
-try {
-  db.exec('DELETE FROM deleted_photos;');
-} catch {
-  // ignore
-}
-
 function sendJson(res, statusCode, data) {
   const payload = JSON.stringify(data);
   res.writeHead(statusCode, {
