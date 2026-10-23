@@ -191,8 +191,8 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true });
     }
 
-    // GET /api/uploads/:filename
-    if (pathname.startsWith('/api/uploads/') && req.method === 'GET') {
+    // GET / HEAD /api/uploads/:filename
+    if (pathname.startsWith('/api/uploads/') && (req.method === 'GET' || req.method === 'HEAD')) {
       const filename = path.basename(pathname.replace('/api/uploads/', ''));
       const filePath = path.join(UPLOADS_DIR, filename);
       if (!fs.existsSync(filePath)) {
@@ -212,6 +212,9 @@ const server = http.createServer(async (req, res) => {
         'Cache-Control': 'public, max-age=31536000, immutable',
         'Access-Control-Allow-Origin': '*',
       });
+      if (req.method === 'HEAD') {
+        return res.end();
+      }
       return fs.createReadStream(filePath).pipe(res);
     }
 
