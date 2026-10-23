@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, Send, X, Sparkles, Lock } from 'lucide-react';
+import { MessageCircle, Send, X, Sparkles, Camera } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CannabisLeafIcon, leafPathD } from './CannabisLeafIcon';
 import { safeGetJson, safeSetJson, safeRemoveItem } from '../utils/storage';
@@ -326,8 +326,9 @@ export const VintagePhotoGallery: React.FC = () => {
               : 'bg-[#faf5eb]/80 hover:bg-[#faf5eb] text-[#26120c] border border-[#dfceb0]'
           }`}
         >
-          <Lock className="w-3.5 h-3.5 text-[#dc2626]" />
+          <Camera className="w-3.5 h-3.5 text-[#16a34a]" />
           <span>Fotos da Festa</span>
+          <span className="w-2 h-2 rounded-full bg-[#16a34a] animate-ping" />
         </button>
       </div>
 

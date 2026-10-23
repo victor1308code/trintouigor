@@ -5,9 +5,13 @@ import { DatabaseSync } from 'node:sqlite';
 
 const PORT = process.env.PORT || 4200;
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
 const dbPath = path.join(DATA_DIR, 'trintou.db');
@@ -32,6 +36,14 @@ db.exec(`
     photo_id TEXT PRIMARY KEY,
     deleted_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS party_photos (
+    id TEXT PRIMARY KEY,
+    filename TEXT NOT NULL,
+    author TEXT NOT NULL,
+    caption TEXT,
+    created_at TEXT NOT NULL
+  );
 `);
 
 function sendJson(res, statusCode, data) {
@@ -50,7 +62,8 @@ function parseBody(req) {
     let body = '';
     req.on('data', chunk => {
       body += chunk;
-      if (body.length > 1e6) {
+      // Allow up to 25MB for photo uploads
+      if (body.length > 25 * 1024 * 1024) {
         req.destroy();
         reject(new Error('Body too large'));
       }
@@ -176,6 +189,83 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/deleted-photos/restore-all' && req.method === 'POST') {
       db.exec('DELETE FROM deleted_photos');
       return sendJson(res, 200, { success: true });
+    }
+
+    // GET /api/uploads/:filename
+    if (pathname.startsWith('/api/uploads/') && req.method === 'GET') {
+      const filename = path.basename(pathname.replace('/api/uploads/', ''));
+      const filePath = path.join(UPLOADS_DIR, filename);
+      if (!fs.existsSync(filePath)) {
+        return sendJson(res, 404, { error: 'Foto não encontrada' });
+      }
+      const ext = path.extname(filename).toLowerCase();
+      const mimeTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.webp': 'image/webp',
+        '.gif': 'image/gif',
+      };
+      const contentType = mimeTypes[ext] || 'application/octet-stream';
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+        'Access-Control-Allow-Origin': '*',
+      });
+      return fs.createReadStream(filePath).pipe(res);
+    }
+
+    // GET /api/party-photos
+    if (pathname === '/api/party-photos' && req.method === 'GET') {
+      const stmt = db.prepare('SELECT id, filename, author, caption, created_at as createdAt FROM party_photos ORDER BY ROWID DESC');
+      const rows = stmt.all();
+      const photos = rows.map(r => ({
+        id: r.id,
+        url: `/api/uploads/${r.filename}`,
+        author: r.author,
+        caption: r.caption || '',
+        createdAt: r.createdAt,
+      }));
+      return sendJson(res, 200, photos);
+    }
+
+    // POST /api/party-photos
+    if (pathname === '/api/party-photos' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const { author, caption, imageBase64 } = body;
+      if (!author?.trim() || !imageBase64) {
+        return sendJson(res, 400, { error: 'Foto e autor são obrigatórios' });
+      }
+
+      // Check format
+      const match = imageBase64.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/);
+      let ext = 'jpg';
+      let rawBase64 = imageBase64;
+      if (match) {
+        const rawType = match[1].toLowerCase();
+        ext = rawType === 'jpeg' ? 'jpg' : rawType;
+        if (ext === 'quicktime') ext = 'jpg';
+        rawBase64 = match[2];
+      }
+
+      const id = 'festa_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+      const filename = `${id}.${ext}`;
+      const filePath = path.join(UPLOADS_DIR, filename);
+
+      const buffer = Buffer.from(rawBase64, 'base64');
+      fs.writeFileSync(filePath, buffer);
+
+      const createdAt = new Date().toISOString();
+      const stmt = db.prepare('INSERT INTO party_photos (id, filename, author, caption, created_at) VALUES (?, ?, ?, ?, ?)');
+      stmt.run(id, filename, author.trim(), (caption || '').trim(), createdAt);
+
+      return sendJson(res, 201, {
+        id,
+        url: `/api/uploads/${filename}`,
+        author: author.trim(),
+        caption: (caption || '').trim(),
+        createdAt,
+      });
     }
 
     return sendJson(res, 404, { error: 'Not found' });
