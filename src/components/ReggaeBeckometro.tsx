@@ -357,10 +357,9 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                     type="number"
                     step="any"
                     required
-                    placeholder="Digite o valor (ex: 20, 50, 100...)"
                     value={customAmount}
                     onChange={(e) => setCustomAmount(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a]"
                   />
                 </div>
 
@@ -372,10 +371,9 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Pedrinho, Carol..."
                     value={donorName}
                     onChange={(e) => setDonorName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a]"
                   />
                 </div>
 
@@ -386,10 +384,9 @@ export const ReggaeBeckometro: React.FC<ReggaeBeckometroProps> = ({
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="Ex: Parabéns meu irmão, o Glorioso é eterno!"
                     value={donorMessage}
                     onChange={(e) => setDonorMessage(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a] resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a] resize-none"
                   />
                 </div>
 

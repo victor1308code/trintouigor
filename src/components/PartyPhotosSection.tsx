@@ -654,10 +654,9 @@ export const PartyPhotosSection: React.FC<PartyPhotosSectionProps> = ({ onBackTo
                   <input
                     type="text"
                     required
-                    placeholder="Ex: Guto, Bruna, Amigo do Igor..."
                     value={authorName}
                     onChange={(e) => setAuthorName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a]"
                   />
                 </div>
 
@@ -667,10 +666,9 @@ export const PartyPhotosSection: React.FC<PartyPhotosSectionProps> = ({ onBackTo
                   </label>
                   <input
                     type="text"
-                    placeholder="Ex: Que festa boa! Parabéns Igor!"
                     value={caption}
                     onChange={(e) => setCaption(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a]"
                   />
                 </div>
 
@@ -803,19 +801,17 @@ export const PartyPhotosSection: React.FC<PartyPhotosSectionProps> = ({ onBackTo
                     <input
                       type="text"
                       required
-                      placeholder="Seu nome..."
                       value={newCommentAuthor}
                       onChange={(e) => setNewCommentAuthor(e.target.value)}
-                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a]"
                     />
                     <div className="flex gap-2">
                       <input
                         type="text"
                         required
-                        placeholder="Deixe um recado nessa foto..."
                         value={newCommentText}
                         onChange={(e) => setNewCommentText(e.target.value)}
-                        className="flex-1 px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                        className="flex-1 px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a]"
                       />
                       <button
                         type="submit"

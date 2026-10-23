@@ -330,10 +330,9 @@ export const ReggaeCalendar: React.FC = () => {
             <form onSubmit={handleRsvp} className="flex gap-2">
               <input
                 type="text"
-                placeholder="Seu nome para a lista..."
                 value={rsvpName}
                 onChange={(e) => setRsvpName(e.target.value)}
-                className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#faf5eb] border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#b45309]"
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#faf5eb] border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#b45309]"
               />
               <button
                 type="submit"

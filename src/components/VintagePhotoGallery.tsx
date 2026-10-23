@@ -578,10 +578,9 @@ export const VintagePhotoGallery: React.FC = () => {
                       <input
                         type="text"
                         required
-                        placeholder="Seu nome ou apelido (ex: Pedrinho)"
                         value={newAuthor}
                         onChange={(e) => setNewAuthor(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a]"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a]"
                       />
                     </div>
 
@@ -590,10 +589,9 @@ export const VintagePhotoGallery: React.FC = () => {
                       <textarea
                         rows={2}
                         required
-                        placeholder="Escreva seu recado ou comentário..."
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] placeholder-[#9c8272] focus:outline-none focus:border-[#16a34a] resize-none"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#ded0b9] text-xs text-[#26120c] focus:outline-none focus:border-[#16a34a] resize-none"
                       />
                     </div>
 
